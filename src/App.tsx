@@ -1,44 +1,60 @@
-import { Redirect, Route } from "react-router-dom";
-import { IonApp, IonRouterOutlet, setupIonicReact } from "@ionic/react";
-import { IonReactRouter } from "@ionic/react-router";
-import Home from "./pages/Home";
+import React, { useEffect, useState } from 'react';
+import {
+  IonApp,
+  setupIonicReact,
+} from '@ionic/react';
+import { BrowserRouter as Router, Route, Switch, useHistory } from 'react-router-dom';
 
-/* Core CSS required for Ionic components to work properly */
-import "@ionic/react/css/core.css";
+import './global.css';
+import './theme/variables.css'
 
-/* Basic CSS for apps built with Ionic */
-import "@ionic/react/css/normalize.css";
-import "@ionic/react/css/structure.css";
-import "@ionic/react/css/typography.css";
+import PaginaLogin from './pages/PaginaLogin';
+import PaginaCadastro from './pages/PaginaCadastro';
+import PaginaAvatar from './pages/PaginaAvatar';
+import PaginaAtributos from './pages/PaginaAtributos';
+import PaginaAtributoCadastro from './pages/PaginaAtributoCadastro';
+import PaginaAtributoEdicao from './pages/PaginaAtributoEdicao';
+import PainelDeTarefas from './pages/PainelDeTarefas';
+import PaginaTarefaCadastro from './pages/PaginaTarefaCadastro';
+import PaginaTarefaEdicao from './pages/PaginaTarefaEdicao';
+import AssistenteDev from './pages/AssistenteDev';
+import PaginaModificarPlanejamento from './pages/123';
 
-/* Optional CSS utils that can be commented out */
-import "@ionic/react/css/padding.css";
-import "@ionic/react/css/float-elements.css";
-import "@ionic/react/css/text-alignment.css";
-import "@ionic/react/css/text-transformation.css";
-import "@ionic/react/css/flex-utils.css";
-import "@ionic/react/css/display.css";
-
-/* Theme variables */
-import "./theme/variables.css";
-import { useEffect } from "react";
+import '@ionic/react/css/core.css';
+import '@ionic/react/css/normalize.css';
+import '@ionic/react/css/structure.css';
+import '@ionic/react/css/typography.css';
+import '@ionic/react/css/padding.css';
+import '@ionic/react/css/float-elements.css';
+import '@ionic/react/css/text-alignment.css';
+import '@ionic/react/css/text-transformation.css';
+import '@ionic/react/css/flex-utils.css';
+import '@ionic/react/css/display.css';
+import ExpiraSessao from './composables/expiraSessao';
 
 setupIonicReact();
 
 const App: React.FC = () => {
-
+  
   return (
     <IonApp>
-      <IonReactRouter>
-        <IonRouterOutlet>
-          <Route exact path="/home">
-            <Home />
-          </Route>
-          <Route exact path="/">
-            <Redirect to="/home" />
-          </Route>
-        </IonRouterOutlet>
-      </IonReactRouter>
+    <Router>
+      <ExpiraSessao />
+      <Switch>
+      <Route path="/PaginaCadastro" component={PaginaCadastro} />
+        <Route path="/PaginaLogin" component={PaginaLogin} />
+        <Route path="/PaginaAvatar" component={PaginaAvatar} />
+        <Route path="/PainelDeTarefas" component={PainelDeTarefas} />
+        <Route path="/PaginaTarefaCadastro" component={PaginaTarefaCadastro} />    
+        <Route path="/PaginaTarefaEdicao" component={PaginaTarefaEdicao} />      
+        <Route path="/PaginaAtributos" component={PaginaAtributos} />
+        <Route path="/PaginaAtributoEdicao" component={PaginaAtributoEdicao} />
+        <Route path="/PaginaAtributoCadastro" component={PaginaAtributoCadastro} />
+        <Route path="/AssistenteDev" component={AssistenteDev} /> 
+        <Route path="/PaginaModificarPlanejamento" component={PaginaModificarPlanejamento} />
+        <Route path="/" exact component={PaginaLogin} />
+      </Switch>
+    </Router>
     </IonApp>
   );
 };

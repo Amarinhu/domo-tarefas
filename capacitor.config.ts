@@ -1,8 +1,8 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'ionic.react.sqlite',
-  appName: 'ionic-react-sqlite',
+  appId: 'domo.tarefas',
+  appName: 'domo-tarefas',
   webDir: 'dist',
   server: {
     androidScheme: 'https'

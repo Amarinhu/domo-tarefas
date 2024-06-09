@@ -1,0 +1,20 @@
+.limita-img{
+    width: 10rem;
+    height: 10rem;
+}
+
+ion-header{
+    text-align: center;
+    font-size: 1.6rem;
+    font-weight: bold;
+}
+
+ion-list{
+    padding-top: 1rem;
+}
+
+.custom-versao{
+    padding-top: 3rem;
+    color : gray;
+    font-size : 0.9rem 
+}

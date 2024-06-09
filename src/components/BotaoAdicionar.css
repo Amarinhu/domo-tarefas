@@ -1,0 +1,9 @@
+.custom-botao {
+    position: fixed;
+    bottom: 9vh;
+    right : 2vh;
+    display: block;
+    height: 3.5rem;
+    width: 3.5rem;
+    border-radius: 50%;
+}
