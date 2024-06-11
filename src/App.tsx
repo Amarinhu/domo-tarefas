@@ -31,6 +31,7 @@ import '@ionic/react/css/text-transformation.css';
 import '@ionic/react/css/flex-utils.css';
 import '@ionic/react/css/display.css';
 import ExpiraSessao from './composables/expiraSessao';
+import PaginaRecompensas from './pages/PaginaRecompensas';
 
 setupIonicReact();
 
@@ -50,6 +51,7 @@ const App: React.FC = () => {
         <Route path="/PaginaAtributos" component={PaginaAtributos} />
         <Route path="/PaginaAtributoEdicao" component={PaginaAtributoEdicao} />
         <Route path="/PaginaAtributoCadastro" component={PaginaAtributoCadastro} />
+        <Route path="/PaginaRecompensas" component={PaginaRecompensas} />
         <Route path="/AssistenteDev" component={AssistenteDev} /> 
         <Route path="/PaginaModificarPlanejamento" component={PaginaModificarPlanejamento} />
         <Route path="/" exact component={PaginaLogin} />

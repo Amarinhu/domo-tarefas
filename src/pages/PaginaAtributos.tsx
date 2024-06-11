@@ -24,6 +24,7 @@ import TituloBotaoVoltar from "../components/BarraSuperior";
 import CirculoCarregamento from "../components/CirculoDeCarregamento";
 import { create, rose, search, trash } from "ionicons/icons";
 import BarraInferior from "../components/BarraInferiorControles";
+import armazenamento from "../armazenamento";
 
 type atributoItem = {
   id: number;
@@ -37,6 +38,7 @@ const PainelDeAtributos: React.FC = () => {
   const [atributoFiltro, definirAtributoFiltro] = useState<string>("");
   const [estadoCarregamento, definirCarregamento] = useState(false);
   const [mostraFiltro, definirMostraFiltro] = useState<boolean>(true);
+  const [idUsuario, definirIdUsuario] = useState();
 
   const { executarAcaoSQL, iniciado } = usaSQLiteDB();
 
@@ -49,10 +51,25 @@ const PainelDeAtributos: React.FC = () => {
   atributo.xp
   FROM 
     atributo
+  JOIN
+      Usuario on atributo.usuario_id = usuario.id
   WHERE 
-    ativo = 1`;
+    atributo.ativo = 1
+  AND
+    atributo.usuario_id = ${idUsuario}`;
+
+  const capturaIdUsuarioPromise = async () => {
+    const resultado = await armazenamento.get("idUsuario");
+    return await resultado;
+  };
+
+  const obterIdUsuario = async () => {
+    const idUsuarioAtual: any = await capturaIdUsuarioPromise();
+    definirIdUsuario(idUsuarioAtual);
+  };
 
   useEffect(() => {
+    obterIdUsuario();
     carregaAtributos();
   }, [iniciado]);
 
@@ -82,6 +99,7 @@ const PainelDeAtributos: React.FC = () => {
   };
 
   const aplicaFiltro = () => {
+    console.log(atributoItens);
     const respostaAtributosQuery = `SELECT 
     atributo.id,
     atributo.nome, 
@@ -89,9 +107,13 @@ const PainelDeAtributos: React.FC = () => {
     atributo.xp
     FROM 
       atributo
+    JOIN
+        Usuario on atributo.usuario_id = usuario.id
     WHERE 
-      ativo = 1
-     AND
+      atributo.ativo = 1
+    AND
+      atributo.usuario_id = ${idUsuario}
+    AND
       (atributo.nome LIKE '%${atributoFiltro}%' OR atributo.descricao LIKE '%${atributoFiltro}%')`;
 
     console.log(respostaAtributosQuery);
@@ -130,7 +152,7 @@ const PainelDeAtributos: React.FC = () => {
     }
     const porcentagem = (xp % 1000) / 1000;
     return porcentagem;
-  };  
+  };
 
   const calculaNivel = (xp: number) => {
     let nivel = 0;
@@ -215,7 +237,9 @@ const PainelDeAtributos: React.FC = () => {
                       Nivel: {calculaNivel(item.xp)}
                     </IonLabel>
                     <br></br>
-                    <IonProgressBar value={calculaBarra(item.xp)}></IonProgressBar>
+                    <IonProgressBar
+                      value={calculaBarra(item.xp)}
+                    ></IonProgressBar>
                     <br></br>
                   </div>
                   <IonButtons class="flex-center-icon-text">

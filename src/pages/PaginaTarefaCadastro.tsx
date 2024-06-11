@@ -69,14 +69,14 @@ const PaginaTarefaCadastro: React.FC = () => {
   }, [iniciado]);
 
   const capturaIdUsuarioPromise = async () => {
-    const resultado = await armazenamento.get('idUsuario')
-    return await resultado
-  }
+    const resultado = await armazenamento.get("idUsuario");
+    return await resultado;
+  };
 
-  const obterIdUsuario = async() => {
+  const obterIdUsuario = async () => {
     const idUsuarioAtual: any = await capturaIdUsuarioPromise();
-    definirIdUsuario(idUsuarioAtual)
-  }
+    definirIdUsuario(idUsuarioAtual);
+  };
 
   function saidaModal(ev: CustomEvent<OverlayEventDetail>) {
     if (ev.detail.role === "deletar") {
@@ -86,9 +86,13 @@ const PaginaTarefaCadastro: React.FC = () => {
 
   const carregaTemplates = async () => {
     await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
-      const resultado = await db?.query(`SELECT * from template`);
+      const resultado = await db?.query(`SELECT * from template WHERE usuario_id = ?`, [idUsuario]);
       definirTemplates(resultado?.values);
     });
+  };
+
+  const recarregarPagina = () => {
+    location.reload();
   };
 
   const navegar = useHistory();
@@ -130,7 +134,7 @@ const PaginaTarefaCadastro: React.FC = () => {
             dataInserida,
             1,
             0,
-            idUsuario
+            idUsuario,
           ]
         );
 
@@ -190,7 +194,7 @@ const PaginaTarefaCadastro: React.FC = () => {
             recompensaInserida,
             dificuldadeInserida,
             1,
-            idUsuario
+            idUsuario,
           ]
         );
 
@@ -202,6 +206,7 @@ const PaginaTarefaCadastro: React.FC = () => {
         "Erro ao cadastrar tarefa. Tente novamente mais tarde."
       );
     } finally {
+      recarregarPagina();
       definirCarregamento(false);
     }
   };
@@ -210,9 +215,11 @@ const PaginaTarefaCadastro: React.FC = () => {
     console.log(id);
     definirCarregamento(true);
     await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
-      const resultado = await db?.query(`SELECT * FROM TEMPLATE WHERE id = ?`, [
-        id,
-      ]);
+      const resultado = await db?.query(
+        `SELECT * FROM TEMPLATE WHERE id = ? AND usuario_id = ?`,
+        [id, idUsuario]
+      );
+      console.log(resultado)
       if (resultado?.values && resultado?.values.length) {
         definirTemplateSelecionado(resultado.values[0]);
       }
@@ -235,7 +242,9 @@ const PaginaTarefaCadastro: React.FC = () => {
   const buscaAtributos = async () => {
     try {
       await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
-        const resultado = await db?.query(`SELECT * FROM ATRIBUTO`);
+        const resultado = await db?.query(`SELECT * FROM ATRIBUTO 
+          WHERE ativo = 1 AND usuario_id = ${idUsuario}`);
+        console.log(resultado);
         definirAtributos(resultado?.values);
       });
     } catch (erro) {
@@ -393,14 +402,14 @@ const PaginaTarefaCadastro: React.FC = () => {
                   <IonCol>
                     <IonItem color="light">
                       <IonInput
-                        ref={recompensaEntrada}
+                        ref={dificuldadeEntrada}
                         type="number"
-                        label="Recompensa"
+                        label="Dificuldade"
                         label-placement="floating"
-                        placeholder="Insira a recompensa"
-                        id="recompensa-input"
+                        placeholder="1 a 5"
+                        id="dificuldade-input"
                         color="dark"
-                        value={templateSelecionado.recompensa ?? null}
+                        value={templateSelecionado.dificuldade ?? null}
                       ></IonInput>
                     </IonItem>
                   </IonCol>
@@ -410,14 +419,14 @@ const PaginaTarefaCadastro: React.FC = () => {
                   <IonCol>
                     <IonItem color="light">
                       <IonInput
-                        ref={dificuldadeEntrada}
+                        ref={recompensaEntrada}
                         type="number"
-                        label="Dificuldade"
+                        label="Recompensa"
                         label-placement="floating"
-                        placeholder="1 a 5"
-                        id="dificuldade-input"
+                        placeholder="Insira a recompensa"
+                        id="recompensa-input"
                         color="dark"
-                        value={templateSelecionado.dificuldade ?? null}
+                        value={templateSelecionado.recompensa ?? null}
                       ></IonInput>
                     </IonItem>
                   </IonCol>

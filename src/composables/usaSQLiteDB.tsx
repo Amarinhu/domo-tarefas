@@ -101,7 +101,8 @@ const usaSQLiteDB = () => {
         nome TEXT,
         descricao TEXT,
         xp INTEGER,
-        ativo INTEGER
+        ativo INTEGER,
+        usuario_id INTEGER
     );`);
 
       await db?.query(`CREATE TABLE IF NOT EXISTS ListaAtributos (

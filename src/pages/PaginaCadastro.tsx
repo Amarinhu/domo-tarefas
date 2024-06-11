@@ -91,6 +91,8 @@ const PaginaCadastro: React.FC = () => {
             `INSERT INTO Usuario (nome, email, token) VALUES (?, ?, ?)`,
             [nomeInserido, emailInserido, senhaHash]
           );
+
+          console.log(`INSERT INTO Usuario (nome, email, token) VALUES (?, ?, ?)`, [nomeInserido, emailInserido, senhaHash])
   
           definirResultadoCadastro("Cadastro realizado com sucesso!");
           navegar.replace("/PaginaLogin");

@@ -61,14 +61,14 @@ const PainelDeTarefas: React.FC = () => {
   const quantidadeDeCards = tarefaFiltradas?.length;
 
   const capturaIdUsuarioPromise = async () => {
-    const resultado = await armazenamento.get('idUsuario')
-    return await resultado
-  }
+    const resultado = await armazenamento.get("idUsuario");
+    return await resultado;
+  };
 
-  const obterIdUsuario = async() => {
+  const obterIdUsuario = async () => {
     const idUsuarioAtual: any = await capturaIdUsuarioPromise();
-    definirIdUsuario(idUsuarioAtual)
-  }
+    definirIdUsuario(idUsuarioAtual);
+  };
 
   const respostaTarefasQuery = `SELECT 
     tarefa.id,
@@ -96,10 +96,6 @@ const PainelDeTarefas: React.FC = () => {
     obterIdUsuario();
     carregaTarefas();
   }, [iniciado]);
-
-  const recarregarPagina = () => {
-    location.reload();
-  };
 
   const aplicaFiltro = () => {
     let comandoSQL = respostaTarefasQuery;
@@ -221,9 +217,7 @@ const PainelDeTarefas: React.FC = () => {
     } catch (erro) {
       console.log(erro);
     } finally {
-      recarregarPagina();
-      /*
-      () => aplicaFiltro;*/
+      aplicaFiltro();
     }
   };
 
@@ -232,22 +226,21 @@ const PainelDeTarefas: React.FC = () => {
     const comandoSQLSelect = `SELECT dificuldade, importancia
       FROM Tarefa
       WHERE id = ?`;
-    const comandoCompleta = `UPDATE Tarefa SET completa = 1 WHERE id = ?`;
+    try {
+      executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
+        await db?.query(`UPDATE Tarefa SET completa = 1 WHERE id = ?`, [id]);
+        const respostaSelect = await db?.query(comandoSQLSelect, [id]);
 
-    executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
-      await db?.query(comandoCompleta, [id]);
-      const respostaSelect = await db?.query(comandoSQLSelect, [id]);
+        if (
+          respostaSelect &&
+          respostaSelect.values &&
+          respostaSelect.values?.length > 0
+        ) {
+          const dificuldade = respostaSelect.values?.[0].dificuldade;
+          const importancia = respostaSelect.values?.[0].importancia;
+          incremento = (dificuldade + importancia) * 50;
 
-      if (
-        respostaSelect &&
-        respostaSelect.values &&
-        respostaSelect.values?.length > 0
-      ) {
-        const dificuldade = respostaSelect.values?.[0].dificuldade;
-        const importancia = respostaSelect.values?.[0].importancia;
-        incremento = (dificuldade + importancia) * 50;
-
-        const comandoSQLUpdate = `UPDATE Atributo
+          const comandoSQLUpdate = `UPDATE Atributo
           SET xp = xp + ?
           WHERE id IN (
             SELECT atributo_id
@@ -255,12 +248,17 @@ const PainelDeTarefas: React.FC = () => {
             WHERE tarefa_id = ?
           );`;
 
-        await db?.query(comandoSQLUpdate, [incremento, id]);
-        console.log(`XP atualizado em ${incremento} para tarefa_id ${id}`);
-      } else {
-        console.log("Nenhuma tarefa encontrada com o id fornecido");
-      }
-    });
+          await db?.query(comandoSQLUpdate, [incremento, id]);
+          console.log(`XP atualizado em ${incremento} para tarefa_id ${id}`);
+        } else {
+          console.log("Nenhuma tarefa encontrada com o id fornecido");
+        }
+      });
+    } catch (erro) {
+      console.log(erro);
+    } finally {
+      aplicaFiltro();
+    }
   };
 
   const falharTarefa = (id: number) => {
@@ -296,6 +294,8 @@ const PainelDeTarefas: React.FC = () => {
       } else {
         console.log("Nenhuma tarefa encontrada com o id fornecido");
       }
+
+      aplicaFiltro();
     });
   };
 

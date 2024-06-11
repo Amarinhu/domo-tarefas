@@ -12,6 +12,7 @@ import {
 import {
   body,
   grid,
+  logoBitcoin,
   menu,
   rose,
 } from "ionicons/icons";
@@ -22,6 +23,7 @@ const botoesInformacoes = [
   { nome: 'Perfil', url: '/PaginaAvatar', icon: body },
   { nome: 'Tarefas', url: '/PainelDeTarefas', icon: grid },
   { nome: 'Atributos', url: '/PaginaAtributos', icon: rose },
+  /*{ nome: 'Loja', url: '/PaginaRecompensas', icon: logoBitcoin*/
 ]
 
 const BarraInferior: React.FC = () => {

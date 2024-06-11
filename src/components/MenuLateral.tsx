@@ -32,7 +32,7 @@ const MenuLateral: React.FC = () => {
   };
 
   const caminhos = [
-    { nome: "Configurações", url: "/AssistenteDev", icon: cog },
+    { nome: "Dev Tools", url: "/AssistenteDev", icon: cog },
     { nome: "Sair", url: "/PaginaLogin", icon: exit },
   ];
 
