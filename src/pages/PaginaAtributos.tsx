@@ -146,20 +146,22 @@ const PainelDeAtributos: React.FC = () => {
   };
 
   const calculaBarra = (xp: number) => {
-    let maxXP = 1000;
+    let maxXP = 500;
+    let xpMaxAntigo = 0;
     while (xp >= maxXP) {
-      maxXP += 1000;
+      xpMaxAntigo = maxXP;
+      maxXP += maxXP;
     }
-    const porcentagem = (xp % 1000) / 1000;
+    const porcentagem = (xp - xpMaxAntigo) / (maxXP - xpMaxAntigo);
     return porcentagem;
   };
 
   const calculaNivel = (xp: number) => {
     let nivel = 0;
-    let maxXP = 1000;
+    let maxXP = 500;
     while (xp >= maxXP) {
       nivel++;
-      maxXP += 1000;
+      maxXP += maxXP;
     }
     return nivel;
   };

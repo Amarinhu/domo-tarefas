@@ -13,6 +13,7 @@ import {
   IonIcon,
   IonSelectOption,
   IonSelect,
+  IonRange,
 } from "@ionic/react";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -41,6 +42,7 @@ const PaginaTarefaEdicao: React.FC = () => {
   const [resultadoCadastro, definirResultadoCadastro] = useState<string>("");
   const [tarefaEdicao, definirTarefaEdicao] = useState<any>();
   const [atributos, definirAtributos] = useState<any>([]);
+  const [idUsuario, definirIdUsuario] = useState();
 
   const [atributoSelecionado, definirAtributoSelecionado] = useState<any>();
 
@@ -48,9 +50,9 @@ const PaginaTarefaEdicao: React.FC = () => {
 
   const nomeEntrada = useRef<HTMLIonInputElement>(null);
   const observacaoEntrada = useRef<HTMLIonTextareaElement>(null);
-  const importanciaEntrada = useRef<HTMLIonInputElement>(null);
+  const importanciaEntrada = useRef<HTMLIonRangeElement>(null);
   const recompensaEntrada = useRef<HTMLIonInputElement>(null);
-  const dificuldadeEntrada = useRef<HTMLIonInputElement>(null);
+  const dificuldadeEntrada = useRef<HTMLIonRangeElement>(null);
   const dataEntrada = useRef<HTMLIonInputElement>(null);
 
   const navegar = useHistory();
@@ -59,10 +61,21 @@ const PaginaTarefaEdicao: React.FC = () => {
   const queryParams = new URLSearchParams(localizacao.search);
   const idEdicao = queryParams.get("id");
 
+  const capturaIdUsuarioPromise = async () => {
+    const resultado = await armazenamento.get("idUsuario");
+    return await resultado;
+  };
+
+  const obterIdUsuario = async () => {
+    const idUsuarioAtual: any = await capturaIdUsuarioPromise();
+    definirIdUsuario(idUsuarioAtual);
+  };
+
   const buscaAtributos = async () => {
     try {
       await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
-        const resultado = await db?.query(`SELECT * FROM ATRIBUTO`);
+        const resultado = await db?.query(`SELECT * FROM ATRIBUTO 
+          WHERE ativo = 1 AND usuario_id = ${idUsuario}`);
         definirAtributos(resultado?.values);
       });
     } catch (erro) {
@@ -110,9 +123,7 @@ const PaginaTarefaEdicao: React.FC = () => {
         await db?.query(
           `UPDATE ListaAtributos SET atributo_id = ?
           WHERE id = ${idEdicao}`,
-          [
-            atributoSelecionado,
-          ]
+          [atributoSelecionado]
         );
 
         definirResultadoCadastro("Tarefa cadastrada com sucesso!");
@@ -129,10 +140,12 @@ const PaginaTarefaEdicao: React.FC = () => {
   };
 
   useEffect(() => {
+    obterIdUsuario();
+
     const buscaDados = async () => {
       await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
         const resultado = await db?.query(
-        `SELECT tarefa.id, ListaAtributos.atributo_id, tarefa.nome, tarefa.observacao,
+          `SELECT tarefa.id, ListaAtributos.atributo_id, tarefa.nome, tarefa.observacao,
         tarefa.importancia, tarefa.recompensa, tarefa.dificuldade, tarefa.data
         FROM TAREFA 
         JOIN
@@ -142,10 +155,10 @@ const PaginaTarefaEdicao: React.FC = () => {
           WHERE tarefa.ID = ${idEdicao}`
         );
         definirTarefaEdicao(resultado?.values);
-        definirAtributoSelecionado(resultado?.values?.[0].atributo_id)
-        console.log(resultado?.values?.[0].atributos_id)
+        definirAtributoSelecionado(resultado?.values?.[0].atributo_id);
+        console.log(resultado?.values?.[0].atributos_id);
 
-        console.log(resultado)
+        console.log(resultado);
       });
     };
 
@@ -227,7 +240,7 @@ const PaginaTarefaEdicao: React.FC = () => {
                   </IonCol>
                 </IonRow>
 
-                <IonRow>
+                {/*<IonRow>
                   <IonCol>
                     <IonItem color="light">
                       <IonInput
@@ -244,6 +257,63 @@ const PaginaTarefaEdicao: React.FC = () => {
                       ></IonInput>
                     </IonItem>
                   </IonCol>
+                </IonRow>*/}
+
+                <IonRow>
+                  <IonCol>
+                    <IonItem className="ion-text-center">
+                      <IonLabel>Importância</IonLabel>
+                    </IonItem>
+                    <IonItem color="light">
+                      <IonRange
+                        ref={importanciaEntrada}
+                        style={{ paddingLeft: "1rem", paddingRight: "1rem" }}
+                        min={1}
+                        max={5}
+                        step={1}
+                        snaps={true}
+                        value={tarefaEdicao?.[0].importancia}
+                      />
+                    </IonItem>
+                  </IonCol>
+                </IonRow>
+
+                {/*<IonRow>
+                  <IonCol>
+                    <IonItem color="light">
+                      <IonInput
+                        ref={dificuldadeEntrada}
+                        type="number"
+                        min="1"
+                        max="5"
+                        label="Dificuldade"
+                        label-placement="floating"
+                        placeholder="1 a 5"
+                        id="dificuldade-input"
+                        color="dark"
+                        value={tarefaEdicao?.[0].dificuldade}
+                      ></IonInput>
+                    </IonItem>
+                  </IonCol>
+                </IonRow>*/}
+
+                <IonRow>
+                  <IonCol>
+                    <IonItem className="ion-text-center">
+                      <IonLabel>Dificuldade</IonLabel>
+                    </IonItem>
+                    <IonItem color="light">
+                      <IonRange
+                        ref={dificuldadeEntrada}
+                        style={{ paddingLeft: "1rem", paddingRight: "1rem" }}
+                        min={1}
+                        max={5}
+                        step={1}
+                        snaps={true}
+                        value={tarefaEdicao?.[0].dificuldade}
+                      />
+                    </IonItem>
+                  </IonCol>
                 </IonRow>
 
                 <IonRow>
@@ -258,25 +328,6 @@ const PaginaTarefaEdicao: React.FC = () => {
                         id="recompensa-input"
                         color="dark"
                         value={tarefaEdicao?.[0].recompensa}
-                      ></IonInput>
-                    </IonItem>
-                  </IonCol>
-                </IonRow>
-
-                <IonRow>
-                  <IonCol>
-                    <IonItem color="light">
-                      <IonInput
-                        ref={dificuldadeEntrada}
-                        type="number"
-                        min="1"
-                        max="5"
-                        label="Dificuldade"
-                        label-placement="floating"
-                        placeholder="1 a 5"
-                        id="dificuldade-input"
-                        color="dark"
-                        value={tarefaEdicao?.[0].dificuldade}
                       ></IonInput>
                     </IonItem>
                   </IonCol>

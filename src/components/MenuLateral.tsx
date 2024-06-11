@@ -58,7 +58,7 @@ const MenuLateral: React.FC = () => {
           ))}
         </IonList>
         <div className="ion-text-center custom-versao">
-          <IonText>Ver. 0.0.8</IonText>
+          <IonText>Ver. 0.1.0</IonText>
         </div>
       </IonContent>
     </IonMenu>
