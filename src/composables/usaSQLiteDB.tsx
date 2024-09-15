@@ -60,19 +60,16 @@ const usaSQLiteDB = () => {
   };
 
   const iniciaTabelas = async () => {
-    executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
+    await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
       await db?.query(`CREATE TABLE IF NOT EXISTS Usuario (
         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-        email TEXT,
-        token TEXT,
-        nome TEXT,
-        descricao TEXT,
-        imagem TEXT, 
-        banco INTEGER,
-        ativo INTEGER
-    );`);
-
-      await db?.query(`CREATE TABLE IF NOT EXISTS Template (
+        nome TEXT(200),
+        descricao TEXT(500),
+        imagem TEXT,
+        xp INTEGER
+    );
+       
+        CREATE TABLE IF NOT EXISTS Template (
         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         nome TEXT,
         observacao TEXT,
@@ -81,9 +78,9 @@ const usaSQLiteDB = () => {
         recompensa INTEGER,
         usuario_id INTEGER,
         ativo INTEGER
-    );`);
-
-      await db?.query(`CREATE TABLE IF NOT EXISTS Tarefa (
+    );
+    
+        CREATE TABLE IF NOT EXISTS Tarefa (
         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         nome TEXT,
         observacao TEXT,
@@ -94,18 +91,18 @@ const usaSQLiteDB = () => {
         usuario_id INTEGER,
         completa INTEGER,
         ativo INTEGER
-    );`);
-
-      await db?.query(`CREATE TABLE IF NOT EXISTS Atributo (
+    );
+      
+      CREATE TABLE IF NOT EXISTS Atributo (
         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         nome TEXT,
-        descricao TEXT,
+        observacao TEXT,
         xp INTEGER,
-        ativo INTEGER,
-        usuario_id INTEGER
-    );`);
-
-      await db?.query(`CREATE TABLE IF NOT EXISTS ListaAtributos (
+        imagem TEXT,
+        ativo INTEGER
+    );
+    
+      CREATE TABLE IF NOT EXISTS ListaAtributos (
         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         atributo_id INTEGER,
         tarefa_id INTEGER,

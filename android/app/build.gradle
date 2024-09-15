@@ -4,7 +4,7 @@ android {
     namespace "ionic.react.sqlite"
     compileSdkVersion rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "ionic.react.sqlite"
+        applicationId "domo.tarefas"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

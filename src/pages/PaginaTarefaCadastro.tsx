@@ -47,7 +47,6 @@ const PaginaTarefaCadastro: React.FC = () => {
   const [resultadoCadastro, definirResultadoCadastro] = useState<string>("");
   const [templateSelecionado, definirTemplateSelecionado] = useState<any>([]);
   const [atributoSelecionado, definirAtributoSelecionado] = useState<any>();
-  const [idUsuario, definirIdUsuario] = useState();
 
   const [templates, definirTemplates] = useState<any>([]);
   const [atributos, definirAtributos] = useState<any>([]);
@@ -59,18 +58,8 @@ const PaginaTarefaCadastro: React.FC = () => {
   useEffect(() => {
     carregaTemplates();
     buscaAtributos();
-    obterIdUsuario();
   }, [iniciado]);
 
-  const capturaIdUsuarioPromise = async () => {
-    const resultado = await armazenamento.get("idUsuario");
-    return await resultado;
-  };
-
-  const obterIdUsuario = async () => {
-    const idUsuarioAtual: any = await capturaIdUsuarioPromise();
-    definirIdUsuario(idUsuarioAtual);
-  };
 
   function saidaModal(ev: CustomEvent<OverlayEventDetail>) {
     if (ev.detail.role === "deletar") {
@@ -81,8 +70,7 @@ const PaginaTarefaCadastro: React.FC = () => {
   const carregaTemplates = async () => {
     await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
       const resultado = await db?.query(
-        `SELECT * from template WHERE usuario_id = ?`,
-        [idUsuario]
+        `SELECT * from template`,
       );
       definirTemplates(resultado?.values);
     });
@@ -110,8 +98,7 @@ const PaginaTarefaCadastro: React.FC = () => {
       dificuldadeInserida,
       dataInserida,
       1,
-      0,
-      idUsuario
+      0
     );
 
     if (
@@ -133,7 +120,7 @@ const PaginaTarefaCadastro: React.FC = () => {
 
       await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
         await db?.query(
-          `INSERT INTO Tarefa (nome, observacao, importancia, recompensa, dificuldade, data, ativo, completa, usuario_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO Tarefa (nome, observacao, importancia, recompensa, dificuldade, data, ativo, completa) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             nomeInserido,
             observacaoInserida,
@@ -142,8 +129,7 @@ const PaginaTarefaCadastro: React.FC = () => {
             dificuldadeInserida,
             dataInserida,
             1,
-            0,
-            idUsuario,
+            0
           ]
         );
 
@@ -195,7 +181,7 @@ const PaginaTarefaCadastro: React.FC = () => {
 
       await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
         await db?.query(
-          `INSERT INTO Template (nome, observacao, importancia, recompensa, dificuldade, ativo, usuario_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO Template (nome, observacao, importancia, recompensa, dificuldade, ativo) VALUES (?, ?, ?, ?, ?, ?)`,
           [
             nomeInserido,
             observacaoInserida,
@@ -203,7 +189,6 @@ const PaginaTarefaCadastro: React.FC = () => {
             recompensaInserida,
             dificuldadeInserida,
             1,
-            idUsuario,
           ]
         );
 
@@ -225,8 +210,8 @@ const PaginaTarefaCadastro: React.FC = () => {
     definirCarregamento(true);
     await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
       const resultado = await db?.query(
-        `SELECT * FROM TEMPLATE WHERE id = ? AND usuario_id = ?`,
-        [id, idUsuario]
+        `SELECT * FROM TEMPLATE WHERE id = ?`,
+        [id]
       );
       console.log(resultado);
       if (resultado?.values && resultado?.values.length) {
@@ -252,7 +237,7 @@ const PaginaTarefaCadastro: React.FC = () => {
     try {
       await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
         const resultado = await db?.query(`SELECT * FROM ATRIBUTO 
-          WHERE ativo = 1 AND usuario_id = ${idUsuario}`);
+          WHERE ativo = 1`);
         console.log(resultado);
         definirAtributos(resultado?.values);
       });

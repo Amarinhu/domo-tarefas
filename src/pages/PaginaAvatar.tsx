@@ -1,155 +1,136 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import BarraSuperior from "../components/BarraSuperior";
 import {
-  IonPage,
-  IonContent,
   IonButton,
+  IonCard,
+  IonCardContent,
+  IonCardHeader,
+  IonContent,
+  IonFooter,
+  IonGrid,
+  IonHeader,
   IonIcon,
   IonImg,
-  IonCol,
+  IonInput,
+  IonItem,
+  IonLabel,
+  IonPage,
+  IonProgressBar,
   IonRow,
-  IonGrid,
   IonText,
-  IonCard,
-  IonCardSubtitle,
-  IonSelectOption,
-  IonSelect,
-  IonCardContent,
-  IonCardTitle,
-  IonCardHeader,
   IonTextarea,
-  IonButtons,
+  IonToast,
 } from "@ionic/react";
-import {
-  settings,
-  sync,
-  clipboardOutline,
-  happy,
-  personCircle,
-  save,
-  body,
-  camera,
-} from "ionicons/icons";
-import "./PaginaAvatar.css";
-import TituloBotaoVoltar from "../components/BarraSuperior";
-import { useHistory } from "react-router";
-import usaSQLiteDB from "../composables/usaSQLiteDB";
-import { SQLiteDBConnection } from "@capacitor-community/sqlite";
-import logoImagem from "../assets/LoginUsuario.png";
+import { body, camera, home, personCircle, save, text } from "ionicons/icons";
 import CirculoCarregamento from "../components/CirculoDeCarregamento";
 import BarraInferior from "../components/BarraInferiorControles";
+import { SQLiteDBConnection } from "@capacitor-community/sqlite";
+import usaSQLiteDB from "../composables/usaSQLiteDB";
+import imagemLightMode from "../assets/avatarLightMode.png";
+import imagemDarkMode from "../assets/avatarDarkMode.png";
 import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
-import armazenamento from "../armazenamento";
 
-const PaginaServidor: React.FC = () => {
+const PaginaBase: React.FC = () => {
+  const [carregamento, defCarregamento] = useState<boolean>(false);
+  const [mostraMensagem, defMostraMensagem] = useState<boolean>(false);
+  const [textoToast, definirTextoToast] = useState<string>("");
+  const [imagemPerfil, defImagemPerfil] = useState<string>("");
   const { executarAcaoSQL, iniciado } = usaSQLiteDB();
-  const [imagemPerfil, definirImagemPerfil] = useState<string | undefined>(
-    undefined
-  );
-  const [nomeUsuario, definirNomeUsuario] = useState("");
-  const [estadoCarregamento, definirCarregamento] = useState<boolean>();
-  const [idUsuario, definirIdUsuario] = useState();
 
-  const [descricao, definirDescricao] = useState<string>("");
+  const [nome, defNome] = useState<string>("");
+  const [imagem, defImagem] = useState<string>("");
+  const [descricao, defDescricao] = useState<string>("");
+  const [xp, defXp] = useState<number>(0);
+  const [resultadosXp, defResultadosXp] = useState<any>();
 
-  const descricaoEntrada = useRef<HTMLIonTextareaElement>(null);
-
-  const navegar = useHistory();
+  const mostrarToast = () => {
+    defMostraMensagem(true);
+  };
 
   useEffect(() => {
-    const capturaIdUsuarioPromise = async () => {
-      const resultado = await armazenamento.get("idUsuario");
-      return await resultado;
-    };
+    if (textoToast !== "") {
+      mostrarToast();
+    }
+  }, [textoToast]);
 
-    const obterIdUsuario = async () => {
-      const idUsuarioAtual: any = await capturaIdUsuarioPromise();
-      definirIdUsuario(idUsuarioAtual);
-    };
+  const capTexto = (evento: CustomEvent) => {
+    const elementoHtml = evento.target as HTMLInputElement;
+    const valor = elementoHtml.value;
+    defDescricao(valor);
+  };
 
-    obterIdUsuario();
-
-    const mostraImagemEInfo = async () => {
-      definirCarregamento(true);
-      try {
-        await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
-          let resultadoFoto = await db?.query(
-            `SELECT imagem from usuario where id = ${idUsuario}`
-          );
-          if (
-            resultadoFoto &&
-            resultadoFoto.values &&
-            resultadoFoto.values.length > 0
-          ) {
-            const foto = `data:image/png;base64, ${resultadoFoto?.values[0]?.imagem}`;
-            definirImagemPerfil(foto);
-          } else {
-            definirImagemPerfil(logoImagem);
-          }
-
-          let resultadoInfo = await db?.query(
-            `SELECT nome, descricao from usuario where id = ${idUsuario}`
-          );
-          if (
-            resultadoInfo &&
-            resultadoInfo.values &&
-            resultadoInfo.values.length > 0
-          ) {
-            const nome = resultadoInfo?.values[0]?.nome;
-            const descricao = resultadoInfo?.values[0]?.descricao;
-            definirNomeUsuario(nome);
-            definirDescricao(descricao);
-          } else {
-            definirNomeUsuario("N/A");
-          }
-        });
-      } catch (erro) {
-        console.log(erro);
-      } finally {
-        definirCarregamento(false);
-      }
-    };
-
-    mostraImagemEInfo();
+  useEffect(() => {
+    buscaDados();
   }, [iniciado]);
 
-  const mostraImagemEInfo = async () => {
-    definirCarregamento(true);
-    try {
-      await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
-        let resultadoFoto = await db?.query(
-          `SELECT imagem from usuario where id = ${idUsuario}`
-        );
-        if (
-          resultadoFoto &&
-          resultadoFoto.values &&
-          resultadoFoto.values.length > 0
-        ) {
-          const foto = `data:image/png;base64, ${resultadoFoto?.values[0]?.imagem}`;
-          definirImagemPerfil(foto);
-        } else {
-          definirImagemPerfil(logoImagem);
-        }
+  const salvar = async () => {
+    await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
+      const comandoSQL = `UPDATE USUARIO SET NOME = ?, DESCRICAO = ?;`;
+      await db?.query(comandoSQL, [nome, descricao]);
+    });
+  };
 
-        let resultadoInfo = await db?.query(
-          `SELECT nome, descricao from usuario where id = ${idUsuario}`
-        );
-        if (
-          resultadoInfo &&
-          resultadoInfo.values &&
-          resultadoInfo.values.length > 0
-        ) {
-          const nome = resultadoInfo?.values[0]?.nome;
-          const descricao = resultadoInfo?.values[0]?.descricao;
-          definirNomeUsuario(nome);
-          definirDescricao(descricao);
-        } else {
-          definirNomeUsuario("N/A");
-        }
+  const calculaNivel = async (xp: number) => {
+    let nivel = 0;
+    let custoProxNivel = 500;
+    let xpSobrando = 0;
+
+    while (xp - custoProxNivel >= 0) {
+      xp -= custoProxNivel;
+      nivel += 1;
+      custoProxNivel += custoProxNivel;
+    }
+
+    xpSobrando = xp;
+
+    const resultados = [
+      { nivel: nivel },
+      { xpExcedente: xpSobrando },
+      { xpProxNivel: custoProxNivel },
+    ];
+
+    defResultadosXp(resultados);
+  };
+
+  const buscaDados = async () => {
+    try {
+      defCarregamento(true);
+      /*const prefDarkMode = window.matchMedia("(prefers-color-scheme: dark)");
+      const estadoDarkMode = prefDarkMode.matches;*/
+      let imgPerfil = "";
+      /*if (estadoDarkMode) {
+        imgPerfil = imagemDarkMode;
+      } else {
+        imgPerfil = imagemLightMode;
+      }*/
+      imgPerfil = imagemLightMode;
+      await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
+        const comandoSQL = `
+            SELECT COALESCE(nome, 'Casca Vazia') as nome, 
+                COALESCE(descricao, 'Uma casca vazia esperando para ser algo') as descricao, 
+                COALESCE(imagem, '${imagemLightMode}') as imagem,
+                COALESCE(xp, 0) as xp
+            FROM Usuario LIMIT 1;`;
+        const resultado = await db?.query(comandoSQL);
+        console.log("Resultado de SQL Usuário: ");
+        console.log(resultado);
+        const nome = resultado?.values?.[0].nome;
+        const descricao = resultado?.values?.[0].descricao;
+        const imagem = resultado?.values?.[0].imagem;
+        const xp = resultado?.values?.[0].xp;
+
+        defNome(nome);
+        defDescricao(descricao);
+        defImagem(imagem);
+        defXp(xp);
+        calculaNivel(xp);
       });
+
+      defImagemPerfil(imgPerfil);
     } catch (erro) {
-      console.log(erro);
+      definirTextoToast("Erro ocorreu: " + erro);
     } finally {
-      definirCarregamento(false);
+      defCarregamento(false);
     }
   };
 
@@ -161,127 +142,97 @@ const PaginaServidor: React.FC = () => {
         resultType: CameraResultType.Base64,
         source: CameraSource.Photos,
       });
-      console.log("Imagem obtida:", imagem);
 
       const base64Imagem = `data:image/${imagem.format};base64,${imagem.base64String}`;
-      definirImagemPerfil(base64Imagem);
 
       await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
-        if (!db) {
-          throw new Error("Conexão com o banco de dados está indefinida");
-        }
-
-        const result = await db.query(
-          `UPDATE USUARIO SET imagem = ? where id = ${idUsuario}`,
-          [imagem.base64String]
-        );
-        console.log("Resultado da atualização do banco de dados:", result);
+        await db?.query(`UPDATE USUARIO SET imagem = ?`, [base64Imagem]);
+        location.reload();
       });
     } catch (error) {
       console.error("Erro em selecionaImagem:", error);
     }
   };
 
-  const salvaDescricao = async () => {
-    const descricaoInserida = String(descricaoEntrada.current?.value).trim();
-    try {
-      definirCarregamento(true);
-
-      await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
-        await db?.query(
-          `UPDATE usuario SET descricao = ? where id = ${idUsuario}`,
-          [descricaoInserida ?? ""]
-        );
-      });
-
-      await mostraImagemEInfo();
-    } catch (erro) {
-      console.log(erro);
-    } finally {
-      definirCarregamento(false);
-    }
-  };
-
   return (
     <IonPage>
-      <TituloBotaoVoltar icone={body} titulo="Avatar" />
+      <IonHeader>
+        <BarraSuperior icone={body} titulo={"Perfil"} />
+      </IonHeader>
       <IonContent color="tertiary">
-        <div className="ion-padding">
-          <IonGrid>
-            <IonRow className="ion-align-items-center">
-              {/*
-              <IonCol className="ion-text-center">
-                <IonButton className="botao-sem-margem">
-                  <IonIcon
-                    className="large-icon ion-text-center"
-                    icon={sync}
-                  ></IonIcon>
+        {!carregamento ? (
+          <IonCard color="secondary">
+            <IonCardHeader style={{ paddingBottom: "0px" }}>
+              <div
+                className="circula-img"
+                style={{ width: "8rem", height: "8rem" }}
+              >
+                {imagemPerfil ? (
+                  <IonImg
+                    className="padroniza-imagem"
+                    src={imagem}
+                    alt="Logo"
+                  ></IonImg>
+                ) : null}
+              </div>
+
+              <div className="ion-text-center">
+                <IonButton onClick={selecionaImagem}>
+                  <IonIcon icon={camera} />
                 </IonButton>
-              </IonCol>*/}
-              <IonCol className="ion-text-center">
-                {estadoCarregamento === true ? (
-                  <CirculoCarregamento />
-                ) : (
-                  <div className="circula-img limita-img">
-                    {imagemPerfil ? (
-                      <IonImg
-                        className="padroniza-imagem"
-                        src={imagemPerfil}
-                        alt="Logo"
-                      ></IonImg>
-                    ) : null}
-                  </div>
-                )}
-              </IonCol>
-            </IonRow>
-            <IonRow>
-              <IonCol>
-                <IonButtons className="ion-justify-content-center">
-                  <IonButton
-                    color="warning"
-                    fill="solid"
-                    onClick={selecionaImagem}
-                  >
-                    <IonIcon icon={camera} />
-                  </IonButton>
-                </IonButtons>
-              </IonCol>
-            </IonRow>
-            <IonRow>
-              <IonCol className="ion-text-center">
-                {estadoCarregamento === true ? (
-                  <CirculoCarregamento />
-                ) : (
-                  <IonCard color="secondary">
-                    <IonCardHeader>
-                      <IonCardTitle>
-                        <IonText>{nomeUsuario}</IonText>
-                      </IonCardTitle>
-                      <IonCardSubtitle>
-                        <IonTextarea
-                          placeholder="Sua descrição"
-                          value={descricao}
-                          ref={descricaoEntrada}
-                        ></IonTextarea>
-                      </IonCardSubtitle>
-                      <IonCardContent>
-                        <IonButtons class="ion-justify-content-center">
-                          <IonButton onClick={salvaDescricao}>
-                            <IonIcon icon={save}></IonIcon>
-                          </IonButton>
-                        </IonButtons>
-                      </IonCardContent>
-                    </IonCardHeader>
-                  </IonCard>
-                )}
-              </IonCol>
-            </IonRow>
-          </IonGrid>
-        </div>
-        <BarraInferior />
+              </div>
+
+              <div className="ion-text-center" style={{ fontSize: "1.2rem" }}>
+                <IonInput value={nome} />
+              </div>
+              {resultadosXp ? (
+                <div className="ion-text-center">
+                  {" "}
+                  <IonText>
+                    Nível {resultadosXp[0].nivel}
+                  </IonText>
+                  <IonProgressBar
+                    value={resultadosXp[1].xpExcedente / resultadosXp[2].xpProxNivel}
+                  ></IonProgressBar>{" "}
+                </div>
+              ) : null}
+            </IonCardHeader>
+            <IonCardContent>
+              <IonItem lines="none" color="secondary">
+                <IonTextarea
+                  label="Descrição"
+                  labelPlacement="floating"
+                  autoGrow={true}
+                  onIonInput={capTexto}
+                  placeholder="Escreva algo"
+                  value={descricao}
+                ></IonTextarea>
+              </IonItem>
+              <div className="ion-text-center">
+                <br></br>
+                <IonButton onClick={salvar}>
+                  <IonIcon icon={save}></IonIcon>
+                </IonButton>
+                {/*<IonButton onClick={() => console.log(resultadosXp)}>
+                    Teste
+                </IonButton>*/}
+              </div>
+            </IonCardContent>
+          </IonCard>
+        ) : null}
+        <IonToast
+          isOpen={mostraMensagem}
+          message={textoToast}
+          onDidDismiss={() => defMostraMensagem(false)}
+          duration={5000}
+        ></IonToast>
+        {carregamento ? <CirculoCarregamento /> : null}
       </IonContent>
+      <IonFooter>
+        <BarraInferior />
+      </IonFooter>
     </IonPage>
   );
 };
 
-export default PaginaServidor;
+export default PaginaBase;

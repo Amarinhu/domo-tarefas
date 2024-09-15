@@ -37,7 +37,6 @@ import armazenamento from "../armazenamento";
 const PaginaAtributoCadastro: React.FC = () => {
   const [carregamento, definirCarregamento] = useState<boolean>(false);
   const [resultadoCadastro, definirResultadoCadastro] = useState<string>("");
-  const [idUsuario, definirIdUsuario] = useState();
 
   const { executarAcaoSQL, iniciado } = usaSQLiteDB();
 
@@ -45,20 +44,6 @@ const PaginaAtributoCadastro: React.FC = () => {
   const descricaoEntrada = useRef<HTMLIonTextareaElement>(null);
 
   const navegar = useHistory();
-
-  const capturaIdUsuarioPromise = async () => {
-    const resultado = await armazenamento.get('idUsuario')
-    return await resultado
-  }
-
-  const obterIdUsuario = async() => {
-    const idUsuarioAtual: any = await capturaIdUsuarioPromise();
-    definirIdUsuario(idUsuarioAtual)
-  }
-
-  useEffect(() => {
-    obterIdUsuario()
-  },[iniciado])
 
   const cadastrarAtributo = async () => {
     const nomeInserido = String(nomeEntrada.current?.value).trim();
@@ -74,8 +59,8 @@ const PaginaAtributoCadastro: React.FC = () => {
 
       await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
         await db?.query(
-          `INSERT INTO Atributo (nome, descricao, xp, ativo, usuario_id) VALUES (?, ?, ?, ?, ?)`,
-          [nomeInserido, descricaoInserida, 0, 1, idUsuario]
+          `INSERT INTO Atributo (nome, observacao, xp, ativo) VALUES (?, ?, ?, ?)`,
+          [nomeInserido, descricaoInserida, 0, 1]
         );
 
         definirResultadoCadastro("Atributo cadastrado com sucesso!");

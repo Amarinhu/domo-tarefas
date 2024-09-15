@@ -58,7 +58,7 @@ const PaginaAtributoEdicao: React.FC = () => {
 
       await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
         await db?.query(
-          `UPDATE Atributo SET nome = ?, descricao = ? WHERE id = ${idEdicao}`,
+          `UPDATE Atributo SET nome = ?, observacao = ? WHERE id = ${idEdicao}`,
           [nomeInserido, descricaoInserida]
         );
 
@@ -127,7 +127,7 @@ const PaginaAtributoEdicao: React.FC = () => {
                         autoGrow={true}
                         id="descricao-input"
                         color="dark"
-                        value={atributoEdicao?.[0].descricao}
+                        value={atributoEdicao?.[0].observacao}
                       ></IonTextarea>
                     </IonItem>
                   </IonCol>

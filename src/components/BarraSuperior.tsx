@@ -7,7 +7,7 @@ import {
   IonButtons,
 } from "@ionic/react";
 import BotaoVoltar from "./BotaoVoltar";
-import { funnel } from "ionicons/icons";
+import { funnel, reload, reloadCircle } from "ionicons/icons";
 
 interface BarraSuperiorProps {
   titulo: string;
@@ -35,6 +35,19 @@ const BarraSuperior: React.FC<BarraSuperiorProps> = ({
       }
     }
   };
+  
+  const recarregar = true;
+  const recarregarPagina = () => {
+    location.reload();
+  };
+
+  const verificaFiltro = () => {
+    if (filtro) {
+      return { marginRight: "0.5rem" };
+    } else {
+      return { marginRight: "1.5rem" };
+    }
+  };
 
   return (
     <div>
@@ -43,6 +56,19 @@ const BarraSuperior: React.FC<BarraSuperiorProps> = ({
           <BotaoVoltar />
           <IonIcon style={{ width : '1.5rem', height : '1.5rem' }} icon={icone}></IonIcon>
           <IonTitle>{titulo}</IonTitle>
+          {recarregar && (
+            <IonButtons style={{ width: "4rem", height: "3rem" }}>
+              <IonButton 
+                onClick={recarregarPagina}
+                style={{ ...verificaFiltro() }}
+              >
+                <IonIcon
+                  className="large-icon avatar-icon"
+                  icon={reload}
+                ></IonIcon>
+              </IonButton>
+            </IonButtons>
+          )}
           {filtro && (
             <IonButtons>
               <IonButton

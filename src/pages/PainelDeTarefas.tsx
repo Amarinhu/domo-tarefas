@@ -54,21 +54,10 @@ const PainelDeTarefas: React.FC = () => {
   const [linhasFiltro, defineLinhasFiltro] = useState([0]);
   const [tarefaFiltradas, definirTarefaFiltradas] =
     useState<Array<tarefaItem>>();
-  const [idUsuario, definirIdUsuario] = useState();
 
   const { executarAcaoSQL, iniciado } = usaSQLiteDB();
 
   const quantidadeDeCards = tarefaFiltradas?.length;
-
-  const capturaIdUsuarioPromise = async () => {
-    const resultado = await armazenamento.get("idUsuario");
-    return await resultado;
-  };
-
-  const obterIdUsuario = async () => {
-    const idUsuarioAtual: any = await capturaIdUsuarioPromise();
-    definirIdUsuario(idUsuarioAtual);
-  };
 
   const respostaTarefasQuery = `SELECT 
     tarefa.id,
@@ -83,17 +72,12 @@ const PainelDeTarefas: React.FC = () => {
           ListaAtributos ON tarefa.id = ListaAtributos.tarefa_id
       JOIN
           Atributo ON ListaAtributos.atributo_id = Atributo.id
-      JOIN
-          Usuario on tarefa.usuario_id = usuario.id
       WHERE 
           tarefa.ativo = 1
       AND 
-          tarefa.completa = 0
-      AND
-          tarefa.usuario_id = ${idUsuario}`;
+          tarefa.completa = 0`;
 
   useEffect(() => {
-    obterIdUsuario();
     carregaTarefas();
   }, [iniciado]);
 

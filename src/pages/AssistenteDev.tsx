@@ -3,6 +3,7 @@ import {
   IonButtons,
   IonCard,
   IonCardContent,
+  IonCardHeader,
   IonCardSubtitle,
   IonCardTitle,
   IonContent,
@@ -11,6 +12,7 @@ import {
   IonItem,
   IonLabel,
   IonPage,
+  IonTextarea,
 } from "@ionic/react";
 import { useEffect, useState } from "react";
 import { SQLiteDBConnection } from "@capacitor-community/sqlite";
@@ -24,6 +26,7 @@ import {
   closeCircle,
   reloadCircle,
   server,
+  serverOutline,
   trash,
   trashBin,
 } from "ionicons/icons";
@@ -99,6 +102,27 @@ const AssistenteDev: React.FC = () => {
     } catch (erro) {
       console.log(erro);
     }
+  };
+
+  const [comandoSQL, definirComandoSQL] = useState<string>();
+  const [dadosSQL, definirDadosSQL] = useState<any>();
+
+  const executaSQL = () => {
+    if (comandoSQL) {
+      executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
+        const resultado = await db?.query(comandoSQL);
+        definirDadosSQL(resultado?.values);
+
+        console.log(typeof resultado);
+        console.log(resultado?.values);
+      });
+      console.log("Comando Executado : " + comandoSQL);
+    }
+  };
+
+  const capturaComandoSQL = (evento: CustomEvent) => {
+    const valor = (evento.target as HTMLInputElement).value;
+    definirComandoSQL(valor);
   };
 
   const paraCarregamento = () => {
@@ -296,22 +320,49 @@ const AssistenteDev: React.FC = () => {
           </IonCardContent>
         </IonCard>
 
-        <div className="ion-padding">
-          {estadoCarregamento ? (
-            <CirculoCarregamento />
-          ) : (
-            BancoItens?.map((item) => (
-              <IonCard color="secondary" key={item?.id}>
-                <IonCardContent>
-                  <IonCardTitle color="light">Nome: {item.nome}</IonCardTitle>
-                  <IonItem color="light">OBS: {item.observacao}</IonItem>
-                  <IonItem color="light">Recompensa: {item.recompensa}</IonItem>
-                  <IonItem color="light">Data: {item.data}</IonItem>
-                </IonCardContent>
-              </IonCard>
-            ))
-          )}
-        </div>
+        <IonCard color="secondary">
+          <IonCardContent>
+            <IonButtons>
+              <IonButton onClick={executaSQL}>
+                <IonIcon
+                  slot="start"
+                  className="icon-large"
+                  icon={serverOutline}
+                ></IonIcon>
+                <IonLabel>Executa SQL</IonLabel>
+              </IonButton>
+            </IonButtons>
+            <IonTextarea
+              autoGrow={true}
+              onIonInput={capturaComandoSQL}
+              placeholder="Insira o comando SQL"
+            ></IonTextarea>
+          </IonCardContent>
+        </IonCard>
+
+        <IonCard>
+          <IonCardHeader color="light">Resultado SQL</IonCardHeader>
+          <div>
+            {dadosSQL
+              ? Object.entries(dadosSQL).map(([chave, valor]) => (
+                  <div
+                    key={chave}
+                    style={{
+                      backgroundColor: "black",
+                      color: "#008000",
+                      paddingBottom: "0.5rem",
+                      paddingTop: "0.5rem",
+                      paddingRight: "0.5rem",
+                      paddingLeft: "1rem",
+                    }}
+                  >
+                    <strong>{chave}:</strong> {JSON.stringify(valor, null, 2)}
+                    <br></br>
+                  </div>
+                ))
+              : null}
+          </div>
+        </IonCard>
       </IonContent>
     </IonPage>
   );

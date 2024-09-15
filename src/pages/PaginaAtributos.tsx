@@ -8,6 +8,7 @@ import {
   IonCardTitle,
   IonCol,
   IonContent,
+  IonFooter,
   IonGrid,
   IonHeader,
   IonIcon,
@@ -29,47 +30,27 @@ import armazenamento from "../armazenamento";
 type atributoItem = {
   id: number;
   nome: string;
-  descricao: string;
+  observacao: string;
   xp: number;
 };
 
 const PainelDeAtributos: React.FC = () => {
   const [atributoItens, definirAtributoItens] = useState<Array<atributoItem>>();
-  const [atributoFiltro, definirAtributoFiltro] = useState<string>("");
   const [estadoCarregamento, definirCarregamento] = useState(false);
-  const [mostraFiltro, definirMostraFiltro] = useState<boolean>(true);
-  const [idUsuario, definirIdUsuario] = useState();
 
   const { executarAcaoSQL, iniciado } = usaSQLiteDB();
 
-  const quantidadeDeCards = atributoItens?.length ? atributoItens?.length : 0;
-
-  const respostaAtributosQuery = `SELECT 
+  let respostaAtributosQuery = `SELECT 
   atributo.id,
   atributo.nome, 
-  atributo.descricao, 
+  atributo.observacao, 
   atributo.xp
   FROM 
     atributo
-  JOIN
-      Usuario on atributo.usuario_id = usuario.id
   WHERE 
-    atributo.ativo = 1
-  AND
-    atributo.usuario_id = ${idUsuario}`;
-
-  const capturaIdUsuarioPromise = async () => {
-    const resultado = await armazenamento.get("idUsuario");
-    return await resultado;
-  };
-
-  const obterIdUsuario = async () => {
-    const idUsuarioAtual: any = await capturaIdUsuarioPromise();
-    definirIdUsuario(idUsuarioAtual);
-  };
+    atributo.ativo = 1`;
 
   useEffect(() => {
-    obterIdUsuario();
     carregaAtributos();
   }, [iniciado]);
 
@@ -80,7 +61,7 @@ const PainelDeAtributos: React.FC = () => {
   const carregaAtributos = async () => {
     definirCarregamento(true);
     try {
-      executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
+      await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
         const respostaAtributos = await db?.query(respostaAtributosQuery);
         definirAtributoItens(respostaAtributos?.values);
       });
@@ -89,43 +70,6 @@ const PainelDeAtributos: React.FC = () => {
       definirAtributoItens([]);
     } finally {
       definirCarregamento(false);
-    }
-  };
-
-  const capturaMudancaAtributo = (evento: CustomEvent) => {
-    const valor = (evento.target as HTMLInputElement).value;
-    console.log("Valor filtro Atributo: ", valor);
-    definirAtributoFiltro(valor);
-  };
-
-  const aplicaFiltro = () => {
-    console.log(atributoItens);
-    const respostaAtributosQuery = `SELECT 
-    atributo.id,
-    atributo.nome, 
-    atributo.descricao, 
-    atributo.xp
-    FROM 
-      atributo
-    JOIN
-        Usuario on atributo.usuario_id = usuario.id
-    WHERE 
-      atributo.ativo = 1
-    AND
-      atributo.usuario_id = ${idUsuario}
-    AND
-      (atributo.nome LIKE '%${atributoFiltro}%' OR atributo.descricao LIKE '%${atributoFiltro}%')`;
-
-    console.log(respostaAtributosQuery);
-
-    try {
-      executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
-        const respostaAtributos = await db?.query(respostaAtributosQuery);
-        definirAtributoItens(respostaAtributos?.values);
-      });
-    } catch (erro) {
-      console.log(erro);
-      definirAtributoItens([]);
     }
   };
 
@@ -145,25 +89,24 @@ const PainelDeAtributos: React.FC = () => {
     }
   };
 
-  const calculaBarra = (xp: number) => {
-    let maxXP = 500;
-    let xpMaxAntigo = 0;
-    while (xp >= maxXP) {
-      xpMaxAntigo = maxXP;
-      maxXP += maxXP;
-    }
-    const porcentagem = (xp - xpMaxAntigo) / (maxXP - xpMaxAntigo);
-    return porcentagem;
-  };
-
-  const calculaNivel = (xp: number) => {
+  const calculaNivel = async (xp: number) => {
     let nivel = 0;
-    let maxXP = 500;
-    while (xp >= maxXP) {
-      nivel++;
-      maxXP += maxXP;
+    let custoProxNivel = 500;
+    let xpSobrando = 0;
+
+    while (xp - custoProxNivel >= 0) {
+      xp -= custoProxNivel;
+      nivel += 1;
+      custoProxNivel += custoProxNivel;
     }
-    return nivel;
+
+    xpSobrando = xp;
+
+    const resultados = [
+      { nivel: nivel },
+      { xpExcedente: xpSobrando },
+      { xpProxNivel: custoProxNivel },
+    ];
   };
 
   return (
@@ -172,48 +115,9 @@ const PainelDeAtributos: React.FC = () => {
         <TituloBotaoVoltar
           titulo="Atributos"
           icone={rose}
-          filtro={true}
-          definirMostraFiltro={definirMostraFiltro}
-          mostraFiltro={mostraFiltro}
         />
       </IonHeader>
       <IonContent color="tertiary">
-        {mostraFiltro == true ? (
-          <IonCard>
-            <IonCardContent>
-              <IonGrid>
-                <IonRow>
-                  <IonCol>
-                    <IonInput
-                      placeholder="Nome do Atributo"
-                      onIonInput={capturaMudancaAtributo}
-                    ></IonInput>
-                  </IonCol>
-                </IonRow>
-                <IonRow>
-                  <IonCol className="flex-center-icon-text">
-                    <IonButtons>
-                      <IonButton onClick={aplicaFiltro}>
-                        <IonIcon className="icon-large" icon={search}></IonIcon>
-                      </IonButton>
-                    </IonButtons>
-                  </IonCol>
-                </IonRow>
-              </IonGrid>
-            </IonCardContent>
-          </IonCard>
-        ) : null}
-
-        <IonCard>
-          <IonCardHeader>
-            <IonCardTitle
-              style={{ fontSize: "1.5rem" }}
-              className="ion-text-center"
-            >
-              Total: {quantidadeDeCards}
-            </IonCardTitle>
-          </IonCardHeader>
-        </IonCard>
 
         <div className="ion-padding">
           {estadoCarregamento ? (
@@ -231,32 +135,24 @@ const PainelDeAtributos: React.FC = () => {
                   </IonCardTitle>
                 </IonCardHeader>
                 <IonCardContent>
-                  <div className="ion-text-center">{item.descricao}</div>
+                  <div className="ion-text-center">{item.observacao}</div>
                   <div className="ion-text-center">
                     <IonLabel
                       style={{ fontSize: "1.2rem", marginLeft: "0.3rem" }}
                     >
-                      Nivel: {calculaNivel(item.xp)}
+                      Nivel: {0} {item.xp}
                     </IonLabel>
                     <br></br>
-                    <IonProgressBar
-                      value={calculaBarra(item.xp)}
-                    ></IonProgressBar>
+                    <IonProgressBar value={0}></IonProgressBar>
                     <br></br>
                   </div>
                   <IonButtons class="flex-center-icon-text">
                     <IonButton
-                      fill="solid"
-                      color="warning"
-                      style={{ border: "solid 1px black" }}
                       href={`/PaginaAtributoEdicao?id=${item.id}`}
                     >
                       <IonIcon size="large" icon={create}></IonIcon>
                     </IonButton>
                     <IonButton
-                      fill="solid"
-                      color="danger"
-                      style={{ border: "solid 1px black" }}
                       id={`delecao-alerta-${item.id}`}
                     >
                       <IonIcon size="large" icon={trash}></IonIcon>
@@ -291,8 +187,10 @@ const PainelDeAtributos: React.FC = () => {
         >
           +
         </IonButton>
-        <BarraInferior />
       </IonContent>
+      <IonFooter>
+        <BarraInferior />
+      </IonFooter>
     </IonPage>
   );
 };

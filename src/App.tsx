@@ -8,7 +8,8 @@ import { BrowserRouter as Router, Route, Switch, useHistory } from 'react-router
 import './global.css';
 import './theme/variables.css'
 
-import PaginaLogin from './pages/PaginaLogin';
+import PaginaBase from './pages/PaginaBase_Ref';
+
 import PaginaCadastro from './pages/PaginaCadastro';
 import PaginaAvatar from './pages/PaginaAvatar';
 import PaginaAtributos from './pages/PaginaAtributos';
@@ -30,7 +31,6 @@ import '@ionic/react/css/text-alignment.css';
 import '@ionic/react/css/text-transformation.css';
 import '@ionic/react/css/flex-utils.css';
 import '@ionic/react/css/display.css';
-import ExpiraSessao from './composables/expiraSessao';
 import PaginaRecompensas from './pages/PaginaRecompensas';
 
 setupIonicReact();
@@ -40,10 +40,11 @@ const App: React.FC = () => {
   return (
     <IonApp>
     <Router>
-      <ExpiraSessao />
       <Switch>
       <Route path="/PaginaCadastro" component={PaginaCadastro} />
-        <Route path="/PaginaLogin" component={PaginaLogin} />
+
+      <Route path="/PaginaBase" component={PaginaBase} />
+
         <Route path="/PaginaAvatar" component={PaginaAvatar} />
         <Route path="/PainelDeTarefas" component={PainelDeTarefas} />
         <Route path="/PaginaTarefaCadastro" component={PaginaTarefaCadastro} />    
@@ -54,7 +55,7 @@ const App: React.FC = () => {
         <Route path="/PaginaRecompensas" component={PaginaRecompensas} />
         <Route path="/AssistenteDev" component={AssistenteDev} /> 
         <Route path="/PaginaModificarPlanejamento" component={PaginaModificarPlanejamento} />
-        <Route path="/" exact component={PaginaLogin} />
+        <Route path="/" exact component={PainelDeTarefas} />
       </Switch>
     </Router>
     </IonApp>
