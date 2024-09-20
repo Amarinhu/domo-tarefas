@@ -27,14 +27,12 @@ import BarraInferior from "../components/BarraInferiorControles";
 import { SQLiteDBConnection } from "@capacitor-community/sqlite";
 import usaSQLiteDB from "../composables/usaSQLiteDB";
 import imagemLightMode from "../assets/avatarLightMode.png";
-import imagemDarkMode from "../assets/avatarDarkMode.png";
 import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
 
 const PaginaBase: React.FC = () => {
   const [carregamento, defCarregamento] = useState<boolean>(false);
   const [mostraMensagem, defMostraMensagem] = useState<boolean>(false);
-  const [textoToast, definirTextoToast] = useState<string>("");
-  const [imagemPerfil, defImagemPerfil] = useState<string>("");
+  const [textoToast, defTextoToast] = useState<string>("");
   const { executarAcaoSQL, iniciado } = usaSQLiteDB();
 
   const [nome, defNome] = useState<string>("");
@@ -43,31 +41,44 @@ const PaginaBase: React.FC = () => {
   const [xp, defXp] = useState<number>(0);
   const [resultadosXp, defResultadosXp] = useState<any>();
 
-  const mostrarToast = () => {
-    defMostraMensagem(true);
-  };
-
-  useEffect(() => {
-    if (textoToast !== "") {
-      mostrarToast();
-    }
-  }, [textoToast]);
-
-  const capTexto = (evento: CustomEvent) => {
+  const capDescricao = (evento: CustomEvent) => {
     const elementoHtml = evento.target as HTMLInputElement;
     const valor = elementoHtml.value;
     defDescricao(valor);
   };
+
+  const capNome = (evento: CustomEvent) => {
+    const elementoHtml = evento.target as HTMLInputElement;
+    const valor = elementoHtml.value;
+    defNome(valor);
+  };
+
+  useEffect(() => {
+    if (textoToast !== "") {
+      defMostraMensagem(true);
+
+      setTimeout(() => {
+        defMostraMensagem(false);
+        defTextoToast("");
+      }, 5000);
+    }
+  }, [textoToast]);
 
   useEffect(() => {
     buscaDados();
   }, [iniciado]);
 
   const salvar = async () => {
-    await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
-      const comandoSQL = `UPDATE USUARIO SET NOME = ?, DESCRICAO = ?;`;
-      await db?.query(comandoSQL, [nome, descricao]);
-    });
+    try {
+      await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
+        const comandoSQL = `UPDATE USUARIO SET NOME = ?, DESCRICAO = ?;`;
+        await db?.query(comandoSQL, [nome, descricao]);
+      });
+    } catch (erro) {
+      console.error(erro);
+    } finally {
+      defTextoToast("Alterações Salvas");
+    }
   };
 
   const calculaNivel = async (xp: number) => {
@@ -125,10 +136,8 @@ const PaginaBase: React.FC = () => {
         defXp(xp);
         calculaNivel(xp);
       });
-
-      defImagemPerfil(imgPerfil);
     } catch (erro) {
-      definirTextoToast("Erro ocorreu: " + erro);
+      defTextoToast("Erro ocorreu: " + erro);
     } finally {
       defCarregamento(false);
     }
@@ -167,7 +176,7 @@ const PaginaBase: React.FC = () => {
                 className="circula-img"
                 style={{ width: "8rem", height: "8rem" }}
               >
-                {imagemPerfil ? (
+                {imagem ? (
                   <IonImg
                     className="padroniza-imagem"
                     src={imagem}
@@ -183,16 +192,16 @@ const PaginaBase: React.FC = () => {
               </div>
 
               <div className="ion-text-center" style={{ fontSize: "1.2rem" }}>
-                <IonInput value={nome} />
+                <IonInput onIonInput={capNome} value={nome} />
               </div>
               {resultadosXp ? (
                 <div className="ion-text-center">
                   {" "}
-                  <IonText>
-                    Nível {resultadosXp[0].nivel}
-                  </IonText>
+                  <IonText>Nível {resultadosXp[0].nivel}</IonText>
                   <IonProgressBar
-                    value={resultadosXp[1].xpExcedente / resultadosXp[2].xpProxNivel}
+                    value={
+                      resultadosXp[1].xpExcedente / resultadosXp[2].xpProxNivel
+                    }
                   ></IonProgressBar>{" "}
                 </div>
               ) : null}
@@ -203,7 +212,7 @@ const PaginaBase: React.FC = () => {
                   label="Descrição"
                   labelPlacement="floating"
                   autoGrow={true}
-                  onIonInput={capTexto}
+                  onIonInput={capDescricao}
                   placeholder="Escreva algo"
                   value={descricao}
                 ></IonTextarea>

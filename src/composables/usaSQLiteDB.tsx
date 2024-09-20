@@ -109,8 +109,6 @@ const usaSQLiteDB = () => {
         ativo INTEGER
     );`);
 
-      /*const respostaSQL = await db?.execute(sqlCriarTabelas);
-      console.log(`res: ${JSON.stringify(respostaSQL)}`);*/
     });
   };
 
