@@ -212,9 +212,7 @@ const PaginaBase: React.FC = () => {
         {carregamento ? <CirculoCarregamento /> : null}
       </IonContent>
 
-      <IonFooter>
-        <BarraInferior />
-      </IonFooter>
+      <BarraInferior />
     </IonPage>
   );
 };

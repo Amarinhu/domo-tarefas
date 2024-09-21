@@ -507,9 +507,10 @@ const PainelDeTarefas: React.FC = () => {
         </IonButton>
         {/*
         <BotaoAdicionarItem caminho="./PaginaAdicionarTarefa" />*/}
-        <BarraInferior />
+
         <br></br>
       </IonContent>
+      <BarraInferior />
     </IonPage>
   );
 };
