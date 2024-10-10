@@ -122,7 +122,13 @@ const PaginaBase: React.FC = () => {
                 COALESCE(imagem, '${imagemLightMode}') as imagem,
                 COALESCE(xp, 0) as xp
             FROM Usuario LIMIT 1;`;
-        const resultado = await db?.query(comandoSQL);
+        let resultado = await db?.query(comandoSQL);
+        if (resultado && resultado.values && resultado?.values?.length <= 0) {
+          await db?.query(`INSERT INTO USUARIO (nome, descricao, imagem, xp)
+            VALUES ('Casca Vazia', 'Uma casca vazia esperando para ser algo', '${imagemLightMode}', 0) `);
+
+          resultado = await db?.query(comandoSQL);
+        }
         console.log("Resultado de SQL Usuário: ");
         console.log(resultado);
         const nome = resultado?.values?.[0].nome;

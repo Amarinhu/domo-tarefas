@@ -74,8 +74,10 @@ const usaSQLiteDB = () => {
         nome TEXT,
         observacao TEXT,
         importancia INTEGER,
+        --recompensa INTEGER,
         dificuldade INTEGER,
-        recompensa INTEGER,
+        dataInicio TEXT,
+        dataFim TEXT,
         usuario_id INTEGER,
         ativo INTEGER
     );
@@ -85,9 +87,10 @@ const usaSQLiteDB = () => {
         nome TEXT,
         observacao TEXT,
         importancia INTEGER,
-        recompensa INTEGER,
+        --recompensa INTEGER,
         dificuldade INTEGER,
-        data TEXT,
+        dataInicio TEXT,
+        dataFim TEXT,
         usuario_id INTEGER,
         completa INTEGER,
         ativo INTEGER

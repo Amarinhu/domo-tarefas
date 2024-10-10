@@ -46,7 +46,7 @@ const PaginaTarefaCadastro: React.FC = () => {
   const [carregamento, definirCarregamento] = useState<boolean>(false);
   const [resultadoCadastro, definirResultadoCadastro] = useState<string>("");
   const [templateSelecionado, definirTemplateSelecionado] = useState<any>([]);
-  const [atributoSelecionado, definirAtributoSelecionado] = useState<any>();
+  const [atributoSelecionado, definirAtributoSelecionado] = useState<Array<any>>([]);
 
   const [templates, definirTemplates] = useState<any>([]);
   const [atributos, definirAtributos] = useState<any>([]);
@@ -86,28 +86,17 @@ const PaginaTarefaCadastro: React.FC = () => {
     const nomeInserido = String(nome);
     const observacaoInserida = String(observacao);
     const importanciaInserida = Number(importancia);
-    const recompensaInserida = Number(recompensa);
     const dificuldadeInserida = Number(dificuldade);
-    const dataInserida = String(data);
-
-    console.log(
-      nomeInserido,
-      observacaoInserida,
-      importanciaInserida,
-      recompensaInserida,
-      dificuldadeInserida,
-      dataInserida,
-      1,
-      0
-    );
+    const dataIniInserida = String(dataInicial);
+    const dataFimInserida = String(dataFinal);
 
     if (
       !nomeInserido ||
       !observacaoInserida ||
       !importanciaInserida ||
-      !recompensaInserida ||
       !dificuldadeInserida ||
-      !dataInserida
+      !dataIniInserida ||
+      !dataFimInserida
     ) {
       definirResultadoCadastro("Por favor, preencha todos os campos.");
       return;
@@ -120,14 +109,17 @@ const PaginaTarefaCadastro: React.FC = () => {
 
       await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
         await db?.query(
-          `INSERT INTO Tarefa (nome, observacao, importancia, recompensa, dificuldade, data, ativo, completa) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO Tarefa 
+          (nome, observacao, importancia, 
+          dificuldade, dataInicio, dataFim, ativo, completa) 
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?) `,
           [
             nomeInserido,
             observacaoInserida,
             importanciaInserida,
-            recompensaInserida,
             dificuldadeInserida,
-            dataInserida,
+            dataIniInserida,
+            dataFimInserida,
             1,
             0
           ]
@@ -138,10 +130,14 @@ const PaginaTarefaCadastro: React.FC = () => {
           tarefaId = resultado?.values[0].id;
         }
 
-        await db?.query(
-          `INSERT INTO ListaAtributos (atributo_id, tarefa_id, ativo) values (?, ?, ?)`,
-          [atributoSelecionado, tarefaId, 1]
-        );
+        for(const atributo of atributoSelecionado){
+          console.log(`INSERT INTO ListaAtributos (atributo_id, tarefa_id, ativo) values (?, ?, ?)`,
+            [atributo, tarefaId, 1])
+          await db?.query(
+            `INSERT INTO ListaAtributos (atributo_id, tarefa_id, ativo) values (?, ?, ?)`,
+            [atributo, tarefaId, 1]
+          );
+        }
 
         definirResultadoCadastro("Tarefa cadastrada com sucesso!");
         navegar.replace("/PainelDeTarefas");
@@ -247,8 +243,8 @@ const PaginaTarefaCadastro: React.FC = () => {
   };
 
   const capturaMudancaAtributo = (evento: CustomEvent) => {
-    const valor = parseInt((evento.target as HTMLInputElement).value);
-    console.log("Valor filtro Atributo: ", valor);
+    const valor = (evento.target as HTMLIonSelectElement).value;
+    console.log(valor);
     definirAtributoSelecionado(valor);
   };
 
@@ -276,16 +272,16 @@ const PaginaTarefaCadastro: React.FC = () => {
     definirObservacao(valor);
   };
 
-  const capturaMudancaRecompensa = (evento: CustomEvent) => {
-    const valor = parseInt((evento.target as HTMLInputElement).value);
-    console.log("Valor filtro Recompensa: ", valor);
-    definirRecompensa(valor);
-  };
-
-  const capturaMudancaData = (evento: CustomEvent) => {
+  const capturaMudancaDataFinal = (evento: CustomEvent) => {
     const valor = (evento.target as HTMLDataElement).value;
     console.log("Valor filtro Data: ", valor);
-    definirData(valor);
+    definirDataFinal(valor);
+  };
+
+  const capturaMudancaDataInicial = (evento: CustomEvent) => {
+    const valor = (evento.target as HTMLDataElement).value;
+    console.log("Valor filtro Data: ", valor);
+    definirDataInicial(valor);
   };
 
   const [importancia, definirImportancia] = useState<number>(
@@ -297,7 +293,8 @@ const PaginaTarefaCadastro: React.FC = () => {
   const [nome, definirNome] = useState<any>("");
   const [observacao, definirObservacao] = useState<string>("");
   const [recompensa, definirRecompensa] = useState<number>(1);
-  const [data, definirData] = useState<any>();
+  const [dataInicial, definirDataInicial] = useState<any>();
+  const [dataFinal, definirDataFinal] = useState<any>();
 
   useEffect(() => {
     if (templateSelecionado) {
@@ -308,6 +305,22 @@ const PaginaTarefaCadastro: React.FC = () => {
       definirDificuldade(templateSelecionado.dificuldade ?? 1);
     }
   }, [templateSelecionado]);
+  
+  const teste = () => {
+    console.log(`
+      Nome: ${nome}
+      Observação: ${observacao}
+      Importância: ${importancia}
+      Deficuldade: ${dificuldade}
+      Data Inicial: ${dataInicial}
+      Data Final: ${dataFinal}
+      Atributo: ${Array(atributoSelecionado)}
+      `)
+
+      for(const atributo of atributoSelecionado){
+        console.log(atributo)
+      }
+  }
 
   return (
     <IonApp>
@@ -315,6 +328,7 @@ const PaginaTarefaCadastro: React.FC = () => {
         <BarraSuperior icone={grid} titulo="Cadastrar Tarefa" />
       </IonHeader>
       <IonContent color="tertiary">
+        <IonButton onClick={teste}>TESTE</IonButton>
         <div className="ion-padding">
           {carregamento ? (
             <CirculoCarregamento />
@@ -377,8 +391,9 @@ const PaginaTarefaCadastro: React.FC = () => {
                 {atributos ? (
                   <IonRow>
                     <IonCol>
-                      <IonItem color="light">
+                      <IonItem color="secondary">
                         <IonSelect
+                          multiple={true}
                           value={atributoSelecionado}
                           placeholder="Atributo"
                           onIonChange={capturaMudancaAtributo}
@@ -399,7 +414,7 @@ const PaginaTarefaCadastro: React.FC = () => {
 
                 <IonRow>
                   <IonCol>
-                    <IonItem color="light">
+                    <IonItem color="secondary">
                       <IonInput
                         onIonInput={capturaMudancaNome}
                         label="Nome"
@@ -415,7 +430,7 @@ const PaginaTarefaCadastro: React.FC = () => {
 
                 <IonRow>
                   <IonCol>
-                    <IonItem color="light">
+                    <IonItem color="secondary">
                       <IonTextarea
                         onIonInput={capturaMudancaObservacao}
                         label="Observação"
@@ -432,7 +447,7 @@ const PaginaTarefaCadastro: React.FC = () => {
 
                 {/*<IonRow>
                   <IonCol>
-                    <IonItem color="light">
+                    <IonItem color="secondary">
                       <IonInput
                         ref={importanciaEntrada}
                         type="number"
@@ -451,10 +466,10 @@ const PaginaTarefaCadastro: React.FC = () => {
 
                 <IonRow>
                   <IonCol>
-                    <IonItem className="ion-text-center">
+                    <IonItem color="secondary" className="ion-text-center">
                       <IonLabel>Importância</IonLabel>
                     </IonItem>
-                    <IonItem color="light">
+                    <IonItem color="secondary">
                       <IonRange
                         style={{ paddingLeft: "1rem", paddingRight: "1rem" }}
                         min={1}
@@ -470,7 +485,7 @@ const PaginaTarefaCadastro: React.FC = () => {
 
                 {/*<IonRow>
                   <IonCol>
-                    <IonItem color="light">
+                    <IonItem color="secondary">
                       <IonInput
                         ref={dificuldadeEntrada}
                         type="number"
@@ -487,10 +502,10 @@ const PaginaTarefaCadastro: React.FC = () => {
 
                 <IonRow>
                   <IonCol>
-                    <IonItem className="ion-text-center">
+                    <IonItem color="secondary" className="ion-text-center">
                       <IonLabel>Dificuldade</IonLabel>
                     </IonItem>
-                    <IonItem color="light">
+                    <IonItem color="secondary">
                       <IonRange
                         style={{ paddingLeft: "1rem", paddingRight: "1rem" }}
                         min={1}
@@ -506,16 +521,15 @@ const PaginaTarefaCadastro: React.FC = () => {
 
                 <IonRow>
                   <IonCol>
-                    <IonItem color="light">
+                    <IonItem color="secondary">
                       <IonInput
-                        onIonInput={capturaMudancaRecompensa}
-                        type="number"
-                        label="Recompensa"
+                        onIonChange={capturaMudancaDataInicial}
+                        type="date"
+                        label="Data Inicial"
                         label-placement="floating"
-                        placeholder="Insira a recompensa"
-                        id="recompensa-input"
+                        placeholder="Insira a data"
+                        id="data-input"
                         color="dark"
-                        value={recompensa}
                       ></IonInput>
                     </IonItem>
                   </IonCol>
@@ -523,11 +537,11 @@ const PaginaTarefaCadastro: React.FC = () => {
 
                 <IonRow>
                   <IonCol>
-                    <IonItem color="light">
+                    <IonItem color="secondary">
                       <IonInput
-                        onIonChange={capturaMudancaData}
+                        onIonChange={capturaMudancaDataFinal}
                         type="date"
-                        label="Data"
+                        label="Data Inicial"
                         label-placement="floating"
                         placeholder="Insira a data"
                         id="data-input"

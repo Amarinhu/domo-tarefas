@@ -25,11 +25,15 @@ import usaSQLiteDB from "../composables/usaSQLiteDB";
 import TituloBotaoVoltar from "../components/BarraSuperior";
 import CirculoCarregamento from "../components/CirculoDeCarregamento";
 import {
+  checkbox,
   checkmarkCircle,
   closeCircle,
   create,
   diamond,
+  ellipse,
   grid,
+  radio,
+  radioButtonOff,
   reader,
   search,
   today,
@@ -39,21 +43,11 @@ import { meses } from "../globalConstants/constantesGlobais";
 import BarraInferior from "../components/BarraInferiorControles";
 import armazenamento from "../armazenamento";
 
-type tarefaItem = {
-  id: number;
-  nome: string;
-  observacao: string;
-  data: string;
-  recompensa: string;
-  atributo_nome: string;
-};
-
 const PainelDeTarefas: React.FC = () => {
   const [estadoCarregamento, definirCarregamento] = useState(false);
   const [mostraFiltro, definirMostraFiltro] = useState<boolean>(true);
   const [linhasFiltro, defineLinhasFiltro] = useState([0]);
-  const [tarefaFiltradas, definirTarefaFiltradas] =
-    useState<Array<tarefaItem>>();
+  const [tarefaFiltradas, definirTarefaFiltradas] = useState<Array<any>>();
 
   const { executarAcaoSQL, iniciado } = usaSQLiteDB();
 
@@ -63,8 +57,8 @@ const PainelDeTarefas: React.FC = () => {
     tarefa.id,
     tarefa.nome, 
     tarefa.observacao, 
-    tarefa.recompensa, 
-    tarefa.data,
+    tarefa.dataInicio,
+    tarefa.dataFim,
     atributo.nome as atributo_nome
       FROM 
           tarefa
@@ -81,7 +75,7 @@ const PainelDeTarefas: React.FC = () => {
     carregaTarefas();
   }, [iniciado]);
 
-  const aplicaFiltro = () => {
+  const aplicaFiltro = async () => {
     let comandoSQL = respostaTarefasQuery;
 
     let condicoes: any = [];
@@ -119,9 +113,6 @@ const PainelDeTarefas: React.FC = () => {
             case "Importância":
               condicao = `tarefa.importancia = ${valorFiltro}`;
               break;
-            case "Recompensa":
-              condicao = `tarefa.recompensa LIKE '%${valorFiltro}%'`;
-              break;
             case "Dificuldade":
               condicao = `tarefa.dificuldade = ${valorFiltro}`;
               break;
@@ -156,7 +147,7 @@ const PainelDeTarefas: React.FC = () => {
         ")";
     }
 
-    executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
+    await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
       const respostaTarefas = await db?.query(comandoSQL);
       definirTarefaFiltradas(respostaTarefas?.values);
       console.log(tarefaFiltradas);
@@ -173,7 +164,7 @@ const PainelDeTarefas: React.FC = () => {
   const carregaTarefas = async () => {
     definirCarregamento(true);
     try {
-      executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
+      await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
         const respostaTarefas = await db?.query(respostaTarefasQuery);
         definirTarefaFiltradas(respostaTarefas?.values);
       });
@@ -185,7 +176,7 @@ const PainelDeTarefas: React.FC = () => {
     }
   };
 
-  const confirmaDelecao = (id: number) => {
+  const confirmaDelecao = async (id: number) => {
     console.log(`Realiza Deleção do tarefa : ${id}`);
     let tarefaDelecao = `
       UPDATE Tarefa SET ativo = 0 WHERE id = ${id};`;
@@ -194,7 +185,7 @@ const PainelDeTarefas: React.FC = () => {
       UPDATE ListaAtributos SET ativo = 0 WHERE tarefa_id = ${id};`;
 
     try {
-      executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
+      await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
         await db?.query(tarefaDelecao);
         await db?.query(tarefaDelecao2);
       });
@@ -205,13 +196,13 @@ const PainelDeTarefas: React.FC = () => {
     }
   };
 
-  const completarTarefa = (id: number) => {
+  const completarTarefa = async (id: number) => {
     let incremento = 0;
     const comandoSQLSelect = `SELECT dificuldade, importancia
       FROM Tarefa
       WHERE id = ?`;
     try {
-      executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
+      await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
         await db?.query(`UPDATE Tarefa SET completa = 1 WHERE id = ?`, [id]);
         const respostaSelect = await db?.query(comandoSQLSelect, [id]);
 
@@ -225,12 +216,12 @@ const PainelDeTarefas: React.FC = () => {
           incremento = (dificuldade + importancia) * 50;
 
           const comandoSQLUpdate = `UPDATE Atributo
-          SET xp = xp + ?
-          WHERE id IN (
-            SELECT atributo_id
-            FROM ListaAtributos
-            WHERE tarefa_id = ?
-          );`;
+            SET xp = COALESCE(xp, 0) + 50
+            WHERE id IN (
+              SELECT atributo_id
+              FROM ListaAtributos
+              WHERE tarefa_id = 2
+            ); `;
 
           await db?.query(comandoSQLUpdate, [incremento, id]);
           console.log(`XP atualizado em ${incremento} para tarefa_id ${id}`);
@@ -245,14 +236,14 @@ const PainelDeTarefas: React.FC = () => {
     }
   };
 
-  const falharTarefa = (id: number) => {
+  const falharTarefa = async (id: number) => {
     let decremento = 0;
     const comandoSQLSelect = `SELECT dificuldade, importancia
       FROM Tarefa
       WHERE id = ?`;
     const comandoCompleta = `UPDATE Tarefa SET completa = 1 WHERE id = ?`;
 
-    executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
+    await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
       await db?.query(comandoCompleta, [id]);
       const respostaSelect = await db?.query(comandoSQLSelect, [id]);
 
@@ -266,12 +257,12 @@ const PainelDeTarefas: React.FC = () => {
         decremento = (dificuldade + importancia) * 50 * 0.2;
 
         const comandoSQLUpdate = `UPDATE Atributo
-          SET xp = xp - ?
+          SET xp = COALESCE(xp, 0) - ?
           WHERE id IN (
             SELECT atributo_id
             FROM ListaAtributos
             WHERE tarefa_id = ?
-          );`;
+          ); `;
 
         await db?.query(comandoSQLUpdate, [decremento, id]);
         console.log(`XP atualizado em ${decremento} para tarefa_id ${id}`);
@@ -293,6 +284,10 @@ const PainelDeTarefas: React.FC = () => {
     return `${dia} de ${nomeMes}`;
   };
 
+  const teste = () => {
+    /*for(){}*/
+  }
+
   return (
     <IonPage>
       <IonHeader>
@@ -305,8 +300,9 @@ const PainelDeTarefas: React.FC = () => {
         />
       </IonHeader>
       <IonContent color="tertiary">
+        <IonButton onClick={teste}>Teste</IonButton>
         {mostraFiltro == true ? (
-          <IonCard>
+          <IonCard color="secondary">
             <IonCardContent>
               <IonGrid>
                 <IonRow>
@@ -329,12 +325,11 @@ const PainelDeTarefas: React.FC = () => {
                         <IonSelectOption>Nome</IonSelectOption>
                         <IonSelectOption>Observação</IonSelectOption>
                         <IonSelectOption>Importância</IonSelectOption>
-                        <IonSelectOption>Recompensa</IonSelectOption>
                         <IonSelectOption>Dificuldade</IonSelectOption>
                       </IonSelect>
                     </IonCol>
                     <IonCol size="5">
-                      <IonItem>
+                      <IonItem lines="none" color="secondary">
                         <IonInput id={`valor-filtro-${indice}`}></IonInput>
                       </IonItem>
                     </IonCol>
@@ -365,7 +360,7 @@ const PainelDeTarefas: React.FC = () => {
           </IonCard>
         ) : null}
 
-        <IonCard>
+        <IonCard color="secondary">
           <IonCardHeader>
             <IonCardTitle
               style={{ fontSize: "1.5rem" }}
@@ -384,6 +379,15 @@ const PainelDeTarefas: React.FC = () => {
               <IonCard color="secondary" key={indice}>
                 <IonGrid>
                   <IonRow>
+                    <IonCol size="2">
+                      <IonButton
+                        fill="clear"
+                        color="primary"
+                        onClick={() => completarTarefa(item.id)}
+                      >
+                        <IonIcon size="large" icon={radioButtonOff}></IonIcon>
+                      </IonButton>
+                    </IonCol>
                     <IonCol style={{ paddingBottom: "0rem" }}>
                       <IonCardHeader style={{ paddingBottom: "0rem" }}>
                         <IonCardTitle
@@ -412,21 +416,7 @@ const PainelDeTarefas: React.FC = () => {
                           <IonLabel
                             style={{ fontSize: "1.2rem", marginLeft: "0.3rem" }}
                           >
-                            {formatarData(item.data)}
-                          </IonLabel>
-                        </div>
-                      </IonCol>
-                      <IonCol size="3" style={{ paddingBottom: "0rem" }}>
-                        <div className="ion-text-center">
-                          <IonIcon
-                            slot="start"
-                            icon={diamond}
-                            color="primary"
-                          ></IonIcon>
-                          <IonLabel
-                            style={{ fontSize: "1.2rem", marginLeft: "0.3rem" }}
-                          >
-                            {item.recompensa}
+                            {formatarData(item.dataFim)}
                           </IonLabel>
                         </div>
                       </IonCol>
@@ -435,17 +425,6 @@ const PainelDeTarefas: React.FC = () => {
                     <IonRow>
                       <IonCol style={{ paddingBottom: "0rem" }}>
                         <IonButtons class="flex-center-icon-text">
-                          <IonButton
-                            fill="solid"
-                            color="success"
-                            style={{ border: "solid 1px black" }}
-                            onClick={() => completarTarefa(item.id)}
-                          >
-                            <IonIcon
-                              size="large"
-                              icon={checkmarkCircle}
-                            ></IonIcon>
-                          </IonButton>
                           <IonButton
                             fill="solid"
                             color="danger"

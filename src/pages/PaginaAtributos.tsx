@@ -111,7 +111,7 @@ const PaginaBase: React.FC = () => {
       <IonContent color="tertiary">
         {!carregamento ? (
           <div>
-            {atributoItens.map((atributo) => (
+            {atributoItens.map((atributo, indice) => (
               <div>
                 <IonCard key={atributo.id} color="secondary">
                   <IonCardHeader
@@ -183,6 +183,7 @@ const PaginaBase: React.FC = () => {
                   </IonCardContent>
                 </IonCard>
                 <IonAlert
+                key ={`delecao-${atributo.id}`}
                   trigger={`delecao-alerta-${atributo.id}`}
                   header="Deletar Atributo?"
                   message="Tem certeza que deseja deletar essa atributo?"
