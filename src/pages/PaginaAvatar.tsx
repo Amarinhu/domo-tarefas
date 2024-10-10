@@ -60,7 +60,7 @@ const PaginaBase: React.FC = () => {
       setTimeout(() => {
         defMostraMensagem(false);
         defTextoToast("");
-      }, 5000);
+      }, 2000);
     }
   }, [textoToast]);
 
@@ -239,7 +239,7 @@ const PaginaBase: React.FC = () => {
           isOpen={mostraMensagem}
           message={textoToast}
           onDidDismiss={() => defMostraMensagem(false)}
-          duration={5000}
+          duration={2000}
         ></IonToast>
         {carregamento ? <CirculoCarregamento /> : null}
       </IonContent>

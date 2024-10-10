@@ -36,8 +36,8 @@ const usaSQLiteDB = () => {
       }
     };
 
-    inicializaDB().then(() => {
-      iniciaTabelas();
+    inicializaDB().then(async () => {
+      await iniciaTabelas();
       defineIniciado(true);
     });
   }, []);
@@ -74,7 +74,6 @@ const usaSQLiteDB = () => {
         nome TEXT,
         observacao TEXT,
         importancia INTEGER,
-        --recompensa INTEGER,
         dificuldade INTEGER,
         dataInicio TEXT,
         dataFim TEXT,
@@ -87,7 +86,6 @@ const usaSQLiteDB = () => {
         nome TEXT,
         observacao TEXT,
         importancia INTEGER,
-        --recompensa INTEGER,
         dificuldade INTEGER,
         dataInicio TEXT,
         dataFim TEXT,
@@ -115,7 +113,7 @@ const usaSQLiteDB = () => {
     });
   };
 
-  return { executarAcaoSQL, iniciado };
+  return { executarAcaoSQL, iniciado, iniciaTabelas };
 };
 
 export default usaSQLiteDB;

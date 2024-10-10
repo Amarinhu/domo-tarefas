@@ -18,8 +18,6 @@ import { useEffect, useState } from "react";
 import { SQLiteDBConnection } from "@capacitor-community/sqlite";
 import usaSQLiteDB from "../composables/usaSQLiteDB";
 import TituloBotaoVoltar from "../components/BarraSuperior";
-import armazenamento from "../armazenamento";
-import CirculoCarregamento from "../components/CirculoDeCarregamento";
 import {
   bug,
   build,
@@ -34,60 +32,10 @@ import {
 const AssistenteDev: React.FC = () => {
   const [BancoItens, definirBancoItens] = useState<Array<any>>();
   const [estadoCarregamento, definirCarregamento] = useState(false);
-  const [idUsuario, definirIdUsuario] = useState();
-  const { executarAcaoSQL, iniciado } = usaSQLiteDB();
-
-  const capturaIdUsuarioPromise = async () => {
-    const resultado = await armazenamento.get('idUsuario')
-    return await resultado
-  }
-
-  const obterIdUsuario = async() => {
-    const idUsuarioAtual: any = await capturaIdUsuarioPromise();
-    definirIdUsuario(idUsuarioAtual)
-  }
-
-  const respostaTarefasQuery = `SELECT 
-    tarefa.id,
-    tarefa.nome, 
-    tarefa.observacao, 
-    tarefa.recompensa, 
-    tarefa.data,
-    atributo.nome as atributo_nome
-      FROM 
-          tarefa
-      JOIN
-          ListaAtributos ON tarefa.id = ListaAtributos.tarefa_id
-      JOIN
-          Atributo ON ListaAtributos.atributo_id = Atributo.id
-      JOIN
-          Usuario on tarefa.usuario_id = usuario.id
-      WHERE 
-          tarefa.ativo = 1
-      AND 
-          tarefa.completa = 0
-      AND
-          tarefa.usuario_id = ${idUsuario}`;
-
-  useEffect(() => {
-    obterIdUsuario();
-    carregaDados();
-  }, [iniciado]);
+  const { executarAcaoSQL } = usaSQLiteDB();
 
   const recarregarPagina = () => {
     location.reload();
-  };
-
-  const carregaDados = async () => {
-    try {
-      executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
-        const respostaSQLSelect = await db?.query(respostaTarefasQuery);
-        definirBancoItens(respostaSQLSelect?.values);
-      });
-    } catch (erro) {
-      console.log(erro);
-      definirBancoItens([]);
-    }
   };
 
   const deletarTabela = async () => {
@@ -142,12 +90,7 @@ const AssistenteDev: React.FC = () => {
         await db?.query("DELETE FROM Usuario;");
         await db?.query("DELETE FROM ListaAtributos;");
         await db?.query("DELETE FROM Tarefa;");
-
-        const respostaSQLSelect = await db?.query(respostaTarefasQuery);
-        definirBancoItens(respostaSQLSelect?.values);
       });
-
-      await carregaDados();
 
       recarregarPagina();
     } catch (erro) {
@@ -225,10 +168,65 @@ const AssistenteDev: React.FC = () => {
     (4, 9, 1),  -- CRE para tarefa 'Criar uma obra de arte'
     (5, 10, 1); -- SOC para tarefa 'Participar de evento social'`;
 
-    executarAcaoSQL( async (db: SQLiteDBConnection | undefined) => {
+    executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
       await db?.query(comandoSQL)
     })
   };
+
+  const IniciarBanco = async () => {
+    const comandos = [`CREATE TABLE IF NOT EXISTS Usuario (
+      id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+      nome TEXT(200),
+      descricao TEXT(500),
+      imagem TEXT,
+      xp INTEGER
+    );`,
+      `CREATE TABLE IF NOT EXISTS Atributo (
+      id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+      nome TEXT,
+      observacao TEXT,
+      xp INTEGER,
+      imagem TEXT,
+      ativo INTEGER
+    );`,
+      `CREATE TABLE IF NOT EXISTS Tarefa (
+      id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+      nome TEXT,
+      observacao TEXT,
+      importancia INTEGER,
+      dificuldade INTEGER,
+      dataInicio TEXT,
+      dataFim TEXT,
+      usuario_id INTEGER,
+      completa INTEGER,
+      ativo INTEGER
+    );`,
+      `CREATE TABLE IF NOT EXISTS Template (
+      id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+      nome TEXT,
+      observacao TEXT,
+      importancia INTEGER,
+      dificuldade INTEGER,
+      dataInicio TEXT,
+      dataFim TEXT,
+      usuario_id INTEGER,
+      ativo INTEGER
+    );`,
+      `CREATE TABLE IF NOT EXISTS ListaAtributos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+      atributo_id INTEGER,
+      tarefa_id INTEGER,
+      ativo INTEGER,
+      FOREIGN KEY (atributo_id) REFERENCES Atributo(id),
+      FOREIGN KEY (tarefa_id) REFERENCES Tarefa(id)
+    );`]
+    await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
+      for (const comando of comandos) {
+        console.log(comando)
+        await db?.query(comando)
+      }
+    })
+  }
 
   return (
     <IonPage>
@@ -316,6 +314,14 @@ const AssistenteDev: React.FC = () => {
                 ></IonIcon>
                 <IonLabel>Ver Banco</IonLabel>
               </IonButton>
+              <IonButton onClick={IniciarBanco}>
+                <IonIcon
+                  slot="start"
+                  className="icon-large"
+                  icon={server}
+                ></IonIcon>
+                <IonLabel>Iniciar Banco</IonLabel>
+              </IonButton>
             </IonButtons>
           </IonCardContent>
         </IonCard>
@@ -345,21 +351,21 @@ const AssistenteDev: React.FC = () => {
           <div>
             {dadosSQL
               ? Object.entries(dadosSQL).map(([chave, valor]) => (
-                  <div
-                    key={chave}
-                    style={{
-                      backgroundColor: "black",
-                      color: "#008000",
-                      paddingBottom: "0.5rem",
-                      paddingTop: "0.5rem",
-                      paddingRight: "0.5rem",
-                      paddingLeft: "1rem",
-                    }}
-                  >
-                    <strong>{chave}:</strong> {JSON.stringify(valor, null, 2)}
-                    <br></br>
-                  </div>
-                ))
+                <div
+                  key={chave}
+                  style={{
+                    backgroundColor: "black",
+                    color: "#008000",
+                    paddingBottom: "0.5rem",
+                    paddingTop: "0.5rem",
+                    paddingRight: "0.5rem",
+                    paddingLeft: "1rem",
+                  }}
+                >
+                  <strong>{chave}:</strong> {JSON.stringify(valor, null, 2)}
+                  <br></br>
+                </div>
+              ))
               : null}
           </div>
         </IonCard>

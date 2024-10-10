@@ -10,6 +10,13 @@
   margin-right: auto;
 }
 
+.custom-modal {
+  --width: 80%;
+  --height: auto;
+  --magin: auto;
+  --border-radius: 1rem;
+}
+
 .desabilitado{
   opacity: 0.6;
   cursor: not-allowed;

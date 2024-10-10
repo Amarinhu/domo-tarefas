@@ -10,7 +10,6 @@ import './theme/variables.css'
 
 import PaginaBase from './pages/PaginaBase_Ref';
 
-import PaginaCadastro from './pages/PaginaCadastro';
 import PaginaAvatar from './pages/PaginaAvatar';
 import PaginaAtributos from './pages/PaginaAtributos';
 import PaginaAtributoCadastro from './pages/PaginaAtributoCadastro';
@@ -19,7 +18,6 @@ import PainelDeTarefas from './pages/PainelDeTarefas';
 import PaginaTarefaCadastro from './pages/PaginaTarefaCadastro';
 import PaginaTarefaEdicao from './pages/PaginaTarefaEdicao';
 import AssistenteDev from './pages/AssistenteDev';
-import PaginaModificarPlanejamento from './pages/123';
 
 import '@ionic/react/css/core.css';
 import '@ionic/react/css/normalize.css';
@@ -41,7 +39,6 @@ const App: React.FC = () => {
     <IonApp>
     <Router>
       <Switch>
-      <Route path="/PaginaCadastro" component={PaginaCadastro} />
 
       <Route path="/PaginaBase" component={PaginaBase} />
 
@@ -54,7 +51,6 @@ const App: React.FC = () => {
         <Route path="/PaginaAtributoCadastro" component={PaginaAtributoCadastro} />
         <Route path="/PaginaRecompensas" component={PaginaRecompensas} />
         <Route path="/AssistenteDev" component={AssistenteDev} /> 
-        <Route path="/PaginaModificarPlanejamento" component={PaginaModificarPlanejamento} />
         <Route path="/" exact component={PainelDeTarefas} />
       </Switch>
     </Router>

@@ -38,7 +38,7 @@ import usaSQLiteDB from "../composables/usaSQLiteDB";
 import { SQLiteDBConnection } from "@capacitor-community/sqlite";
 import BarraSuperior from "../components/BarraSuperior";
 import PopupResultado from "../components/PopupResultado";
-import { apps, close, closeCircle, grid, save } from "ionicons/icons";
+import { apps, book, close, closeCircle, grid, save } from "ionicons/icons";
 import { OverlayEventDetail } from "@ionic/core/components";
 import armazenamento from "../armazenamento";
 
@@ -61,7 +61,7 @@ const PaginaTarefaCadastro: React.FC = () => {
   }, [iniciado]);
 
 
-  function saidaModal(ev: CustomEvent<OverlayEventDetail>) {
+  const saidaModal = (ev: CustomEvent<OverlayEventDetail>) => {
     if (ev.detail.role === "deletar") {
       console.log("teste");
     }
@@ -109,7 +109,7 @@ const PaginaTarefaCadastro: React.FC = () => {
 
       await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
         await db?.query(
-          `INSERT INTO Tarefa 
+          ` INSERT INTO Tarefa 
           (nome, observacao, importancia, 
           dificuldade, dataInicio, dataFim, ativo, completa) 
           VALUES (?, ?, ?, ?, ?, ?, ?, ?) `,
@@ -130,7 +130,7 @@ const PaginaTarefaCadastro: React.FC = () => {
           tarefaId = resultado?.values[0].id;
         }
 
-        for(const atributo of atributoSelecionado){
+        for (const atributo of atributoSelecionado) {
           console.log(`INSERT INTO ListaAtributos (atributo_id, tarefa_id, ativo) values (?, ?, ?)`,
             [atributo, tarefaId, 1])
           await db?.query(
@@ -156,17 +156,17 @@ const PaginaTarefaCadastro: React.FC = () => {
     const nomeInserido = String(nome);
     const observacaoInserida = String(observacao);
     const importanciaInserida = Number(importancia);
-    const recompensaInserida = Number(recompensa);
     const dificuldadeInserida = Number(dificuldade);
-    const dataInserida = String(data);
+    const dataInicialInserida = String(dataInicial);
+    const dataFinalInserida = String(dataFinal);
 
     if (
       !nomeInserido ||
       !observacaoInserida ||
       !importanciaInserida ||
-      !recompensaInserida ||
       !dificuldadeInserida ||
-      !dataInserida
+      !dataFinalInserida ||
+      !dataInicialInserida
     ) {
       definirResultadoCadastro("Por favor, preencha todos os campos.");
       return;
@@ -177,13 +177,17 @@ const PaginaTarefaCadastro: React.FC = () => {
 
       await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
         await db?.query(
-          `INSERT INTO Template (nome, observacao, importancia, recompensa, dificuldade, ativo) VALUES (?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO Template 
+          (nome, observacao, importancia, 
+          dificuldade, dataInicio, dataFim, ativo) 
+          VALUES (?, ?, ?, ?, ?, ?, ?)`,
           [
             nomeInserido,
             observacaoInserida,
             importanciaInserida,
-            recompensaInserida,
             dificuldadeInserida,
+            dataInicialInserida,
+            dataFinalInserida,
             1,
           ]
         );
@@ -206,7 +210,7 @@ const PaginaTarefaCadastro: React.FC = () => {
     definirCarregamento(true);
     await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
       const resultado = await db?.query(
-        `SELECT * FROM TEMPLATE WHERE id = ?`,
+        ` SELECT * FROM TEMPLATE WHERE id = ? `,
         [id]
       );
       console.log(resultado);
@@ -298,14 +302,18 @@ const PaginaTarefaCadastro: React.FC = () => {
 
   useEffect(() => {
     if (templateSelecionado) {
+      console.log(templateSelecionado)
       definirRecompensa(templateSelecionado.recompensa ?? 1);
       definirNome(templateSelecionado.nome ?? "");
       definirObservacao(templateSelecionado.observacao);
       definirImportancia(templateSelecionado.importancia ?? 1);
       definirDificuldade(templateSelecionado.dificuldade ?? 1);
+
+      definirDataInicial(templateSelecionado.dataInicio ?? 1);
+      definirDataFinal(templateSelecionado.dataFim ?? 1);
     }
   }, [templateSelecionado]);
-  
+
   const teste = () => {
     console.log(`
       Nome: ${nome}
@@ -317,18 +325,18 @@ const PaginaTarefaCadastro: React.FC = () => {
       Atributo: ${Array(atributoSelecionado)}
       `)
 
-      for(const atributo of atributoSelecionado){
-        console.log(atributo)
-      }
+    for (const atributo of atributoSelecionado) {
+      console.log(atributo)
+    }
   }
 
   return (
     <IonApp>
       <IonHeader>
-        <BarraSuperior icone={grid} titulo="Cadastrar Tarefa" />
+        <BarraSuperior icone={book} titulo="Cadastrar Tarefa" />
       </IonHeader>
       <IonContent color="tertiary">
-        <IonButton onClick={teste}>TESTE</IonButton>
+        {/*<IonButton onClick={teste}>TESTE</IonButton>*/}
         <div className="ion-padding">
           {carregamento ? (
             <CirculoCarregamento />
@@ -530,6 +538,7 @@ const PaginaTarefaCadastro: React.FC = () => {
                         placeholder="Insira a data"
                         id="data-input"
                         color="dark"
+                        value={dataInicial}
                       ></IonInput>
                     </IonItem>
                   </IonCol>
@@ -541,11 +550,12 @@ const PaginaTarefaCadastro: React.FC = () => {
                       <IonInput
                         onIonChange={capturaMudancaDataFinal}
                         type="date"
-                        label="Data Inicial"
+                        label="Data Final"
                         label-placement="floating"
                         placeholder="Insira a data"
                         id="data-input"
                         color="dark"
+                        value={dataFinal}
                       ></IonInput>
                     </IonItem>
                   </IonCol>

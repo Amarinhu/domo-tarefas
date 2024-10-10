@@ -9,6 +9,10 @@ import {
   IonButton,
   IonTextarea,
   IonHeader,
+  IonModal,
+  IonToolbar,
+  IonButtons,
+  IonTitle,
   IonLabel,
   IonIcon,
   IonSelectOption,
@@ -34,100 +38,124 @@ import usaSQLiteDB from "../composables/usaSQLiteDB";
 import { SQLiteDBConnection } from "@capacitor-community/sqlite";
 import BarraSuperior from "../components/BarraSuperior";
 import PopupResultado from "../components/PopupResultado";
-import { grid, save } from "ionicons/icons";
+import { apps, book, close, closeCircle, grid, save } from "ionicons/icons";
+import { OverlayEventDetail } from "@ionic/core/components";
 import armazenamento from "../armazenamento";
 
 const PaginaTarefaEdicao: React.FC = () => {
   const [carregamento, definirCarregamento] = useState<boolean>(false);
   const [resultadoCadastro, definirResultadoCadastro] = useState<string>("");
-  const [tarefaEdicao, definirTarefaEdicao] = useState<any>();
-  const [atributos, definirAtributos] = useState<any>([]);
-  const [idUsuario, definirIdUsuario] = useState();
+  const [templateSelecionado, definirTemplateSelecionado] = useState<any>([]);
+  const [atributoSelecionado, definirAtributoSelecionado] = useState<Array<any>>([]);
 
-  const [atributoSelecionado, definirAtributoSelecionado] = useState<any>();
+  const [templates, definirTemplates] = useState<any>([]);
+  const [atributos, definirAtributos] = useState<any>([]);
+
+  const location = useLocation();
+  const parametros = new URLSearchParams(location.search);
+  const id = parametros.get('id');
 
   const { executarAcaoSQL, iniciado } = usaSQLiteDB();
 
-  const nomeEntrada = useRef<HTMLIonInputElement>(null);
-  const observacaoEntrada = useRef<HTMLIonTextareaElement>(null);
-  const importanciaEntrada = useRef<HTMLIonRangeElement>(null);
-  const recompensaEntrada = useRef<HTMLIonInputElement>(null);
-  const dificuldadeEntrada = useRef<HTMLIonRangeElement>(null);
-  const dataEntrada = useRef<HTMLIonInputElement>(null);
-
   const navegar = useHistory();
 
-  const localizacao = useLocation();
-  const queryParams = new URLSearchParams(localizacao.search);
-  const idEdicao = queryParams.get("id");
-
-  const capturaIdUsuarioPromise = async () => {
-    const resultado = await armazenamento.get("idUsuario");
-    return await resultado;
-  };
-
-  const obterIdUsuario = async () => {
-    const idUsuarioAtual: any = await capturaIdUsuarioPromise();
-    definirIdUsuario(idUsuarioAtual);
-  };
-
-  const buscaAtributos = async () => {
+  useEffect(() => {
     try {
-      await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
-        const resultado = await db?.query(`SELECT * FROM ATRIBUTO 
-          WHERE ativo = 1 AND usuario_id = ${idUsuario}`);
-        definirAtributos(resultado?.values);
-      });
+      definirCarregamento(true)
+      carregaTemplates();
+      buscaAtributos();
+      carregaEdicao();
     } catch (erro) {
-      console.log(erro);
+      console.error()
+    } finally {
+      definirCarregamento(false)
     }
+  }, [iniciado]);
+
+  const carregaTemplates = async () => {
+    await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
+      const resultado = await db?.query(
+        `SELECT * from template`,
+      );
+      definirTemplates(resultado?.values);
+    });
   };
 
-  const atualizarTarefa = async () => {
-    const nomeInserido = String(nomeEntrada.current?.value).trim();
-    const observacaoInserida = String(observacaoEntrada.current?.value).trim();
-    const importanciaInserida = Number(importanciaEntrada.current?.value);
-    const recompensaInserida = Number(recompensaEntrada.current?.value);
-    const dificuldadeInserida = Number(dificuldadeEntrada.current?.value);
-    const dataInserida = String(dataEntrada.current?.value).trim();
+  const carregaEdicao = async () => {
+    if (id) {
+      const comandoSQL = ` 
+      SELECT 
+      tarefa.id,
+      tarefa.nome, 
+      tarefa.observacao, 
+      tarefa.importancia, 
+      tarefa.dificuldade, 
+      tarefa.dataInicio,
+      tarefa.dataFim,
+      GROUP_CONCAT(atributo.id) as ids
+      FROM tarefa
+        JOIN
+            ListaAtributos ON tarefa.id = ListaAtributos.tarefa_id
+        JOIN
+            Atributo ON ListaAtributos.atributo_id = Atributo.id
+        WHERE tarefa.ID = ? `
+      await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
+        const resultado = await db?.query(comandoSQL, [id])
+        console.log(resultado)
+        if (resultado && resultado.values && resultado.values.length > 0) {
+          const valores = resultado.values
+          definirNome(valores?.[0].nome)
+          definirObservacao(valores?.[0].observacao)
+          definirDataFinal(valores?.[0].dataFim)
+          definirDataInicial(valores?.[0].dataInicio)
+          definirImportancia(valores?.[0].importancia)
+          definirDificuldade(valores?.[0].dificuldade)
+          definirAtributoSelecionado((valores?.[0].ids).split(',').map(Number))
+        }
+      })
+    }
+  }
+
+  const editarTarefa = async () => {
+    const nomeInserido = String(nome);
+    const observacaoInserida = String(observacao);
+    const importanciaInserida = Number(importancia);
+    const dificuldadeInserida = Number(dificuldade);
+    const dataIniInserida = String(dataInicial);
+    const dataFimInserida = String(dataFinal);
 
     if (
       !nomeInserido ||
       !observacaoInserida ||
       !importanciaInserida ||
-      !recompensaInserida ||
       !dificuldadeInserida ||
-      !dataInserida
+      !dataIniInserida ||
+      !dataFimInserida
     ) {
       definirResultadoCadastro("Por favor, preencha todos os campos.");
       return;
     }
 
     try {
-      definirCarregamento(true);
-
       await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
         await db?.query(
-          `UPDATE Tarefa SET nome = ?, observacao = ?, importancia = ?, recompensa = ?, dificuldade = ?, data = ?
-          WHERE id = ${idEdicao}`,
+          ` INSERT OR REPLACE INTO Tarefa (id, nome, observacao, 
+          importancia, dificuldade, dataInicio, dataFim, completa, ativo)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
+            id,
             nomeInserido,
             observacaoInserida,
             importanciaInserida,
-            recompensaInserida,
             dificuldadeInserida,
-            dataInserida,
+            dataIniInserida,
+            dataFimInserida,
+            0,
+            1
           ]
         );
 
-        await db?.query(
-          `UPDATE ListaAtributos SET atributo_id = ?
-          WHERE id = ${idEdicao}`,
-          [atributoSelecionado]
-        );
-
-        definirResultadoCadastro("Tarefa cadastrada com sucesso!");
-        navegar.replace("/PainelDeTarefas");
+        definirResultadoCadastro("Tarefa editada com sucesso!");
       });
     } catch (erro) {
       console.log(erro);
@@ -135,60 +163,122 @@ const PaginaTarefaEdicao: React.FC = () => {
         "Erro ao cadastrar tarefa. Tente novamente mais tarde."
       );
     } finally {
-      definirCarregamento(false);
+      /*navegar.replace("/PainelDeTarefas");*/
     }
   };
 
-  useEffect(() => {
-    obterIdUsuario();
-
-    const buscaDados = async () => {
+  const buscaAtributos = async () => {
+    try {
       await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
-        const resultado = await db?.query(
-          `SELECT tarefa.id, ListaAtributos.atributo_id, tarefa.nome, tarefa.observacao,
-        tarefa.importancia, tarefa.recompensa, tarefa.dificuldade, tarefa.data
-        FROM TAREFA 
-        JOIN
-          ListaAtributos ON tarefa.id = ListaAtributos.tarefa_id
-        JOIN
-          Atributo ON ListaAtributos.atributo_id = Atributo.id
-          WHERE tarefa.ID = ${idEdicao}`
-        );
-        definirTarefaEdicao(resultado?.values);
-        definirAtributoSelecionado(resultado?.values?.[0].atributo_id);
-        console.log(resultado?.values?.[0].atributos_id);
-
+        const resultado = await db?.query(`SELECT * FROM ATRIBUTO 
+          WHERE ativo = 1`);
         console.log(resultado);
+        definirAtributos(resultado?.values);
       });
-    };
-
-    buscaDados();
-    buscaAtributos();
-  }, [iniciado]);
+    } catch (erro) {
+      console.log(erro);
+    }
+  };
 
   const capturaMudancaAtributo = (evento: CustomEvent) => {
-    const valor = parseInt((evento.target as HTMLInputElement).value);
-    console.log("Valor filtro Atributo: ", valor);
+    const valor = (evento.target as HTMLIonSelectElement).value;
+    console.log(valor);
     definirAtributoSelecionado(valor);
   };
+
+  const capturaMudancaImportancia = (evento: CustomEvent) => {
+    const valor = parseInt((evento.target as HTMLInputElement).value);
+    console.log("Valor filtro Importancia: ", valor);
+    definirImportancia(valor);
+  };
+
+  const capturaMudancaDificuldade = (evento: CustomEvent) => {
+    const valor = parseInt((evento.target as HTMLInputElement).value);
+    console.log("Valor filtro Dificuldade: ", valor);
+    definirDificuldade(valor);
+  };
+
+  const capturaMudancaNome = (evento: CustomEvent) => {
+    const valor = (evento.target as HTMLInputElement).value;
+    console.log("Valor filtro Nome: ", valor);
+    definirNome(valor);
+  };
+
+  const capturaMudancaObservacao = (evento: CustomEvent) => {
+    const valor = (evento.target as HTMLInputElement).value;
+    console.log("Valor filtro Observacao: ", valor);
+    definirObservacao(valor);
+  };
+
+  const capturaMudancaDataFinal = (evento: CustomEvent) => {
+    const valor = (evento.target as HTMLDataElement).value;
+    console.log("Valor filtro Data: ", valor);
+    definirDataFinal(valor);
+  };
+
+  const capturaMudancaDataInicial = (evento: CustomEvent) => {
+    const valor = (evento.target as HTMLDataElement).value;
+    console.log("Valor filtro Data: ", valor);
+    definirDataInicial(valor);
+  };
+
+  const [importancia, definirImportancia] = useState<number>(
+    templateSelecionado.importancia ?? 3
+  );
+  const [dificuldade, definirDificuldade] = useState<number>(
+    templateSelecionado.importancia ?? 3
+  );
+  const [nome, definirNome] = useState<any>("");
+  const [observacao, definirObservacao] = useState<string>("");
+  const [dataInicial, definirDataInicial] = useState<any>();
+  const [dataFinal, definirDataFinal] = useState<any>();
+
+  useEffect(() => {
+    if (templateSelecionado) {
+      definirNome(templateSelecionado.nome ?? "");
+      definirObservacao(templateSelecionado.observacao);
+      definirImportancia(templateSelecionado.importancia ?? 1);
+      definirDificuldade(templateSelecionado.dificuldade ?? 1);
+    }
+  }, [templateSelecionado]);
+
+  const teste = async () => {
+    await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
+      await db?.query(
+        ` INSERT OR REPLACE INTO Tarefa (id, nome, observacao, importancia, dificuldade, dataInicio, dataFim)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          id,
+          nome,
+          observacao,
+          importancia,
+          dificuldade,
+          dataInicial,
+          dataFinal
+        ]
+      );
+    })
+  }
 
   return (
     <IonApp>
       <IonHeader>
-        <BarraSuperior icone={grid} titulo="Editar Tarefa" />
+        <BarraSuperior icone={book} titulo="Editar Tarefa" />
       </IonHeader>
       <IonContent color="tertiary">
+        <IonButton onClick={teste}>TESTE</IonButton>
         <div className="ion-padding">
           {carregamento ? (
             <CirculoCarregamento />
           ) : (
             <>
-              <IonGrid className="ion-text-center ion-margin">
-                {atributos ? (
+              {nome && observacao && importancia && dificuldade && dataFinal && dataInicial ? <IonGrid className="ion-text-center ion-margin">
+                {false && atributos && atributoSelecionado ? (
                   <IonRow>
                     <IonCol>
-                      <IonItem color="light">
+                      <IonItem color="secondary">
                         <IonSelect
+                          multiple={true}
                           value={atributoSelecionado}
                           placeholder="Atributo"
                           onIonChange={capturaMudancaAtributo}
@@ -209,15 +299,15 @@ const PaginaTarefaEdicao: React.FC = () => {
 
                 <IonRow>
                   <IonCol>
-                    <IonItem color="light">
+                    <IonItem color="secondary">
                       <IonInput
-                        ref={nomeEntrada}
+                        onIonInput={capturaMudancaNome}
                         label="Nome"
                         label-placement="floating"
                         placeholder="Insira o nome da tarefa"
                         id="nome-input"
                         color="dark"
-                        value={tarefaEdicao?.[0].nome}
+                        value={nome}
                       ></IonInput>
                     </IonItem>
                   </IonCol>
@@ -225,92 +315,54 @@ const PaginaTarefaEdicao: React.FC = () => {
 
                 <IonRow>
                   <IonCol>
-                    <IonItem color="light">
+                    <IonItem color="secondary">
                       <IonTextarea
-                        ref={observacaoEntrada}
+                        onIonInput={capturaMudancaObservacao}
                         label="Observação"
                         label-placement="floating"
                         placeholder="Insira a observação da tarefa"
                         autoGrow={true}
                         id="observacao-input"
                         color="dark"
-                        value={tarefaEdicao?.[0].observacao}
+                        value={observacao}
                       ></IonTextarea>
                     </IonItem>
                   </IonCol>
                 </IonRow>
 
-                {/*<IonRow>
-                  <IonCol>
-                    <IonItem color="light">
-                      <IonInput
-                        ref={importanciaEntrada}
-                        type="number"
-                        min="1"
-                        max="5"
-                        label="Importância"
-                        label-placement="floating"
-                        placeholder="1 a 5"
-                        id="importancia-input"
-                        color="dark"
-                        value={tarefaEdicao?.[0].importancia}
-                      ></IonInput>
-                    </IonItem>
-                  </IonCol>
-                </IonRow>*/}
-
                 <IonRow>
                   <IonCol>
-                    <IonItem className="ion-text-center">
+                    <IonItem color="secondary" className="ion-text-center">
                       <IonLabel>Importância</IonLabel>
                     </IonItem>
-                    <IonItem color="light">
+                    <IonItem color="secondary">
                       <IonRange
-                        ref={importanciaEntrada}
                         style={{ paddingLeft: "1rem", paddingRight: "1rem" }}
                         min={1}
                         max={5}
                         step={1}
                         snaps={true}
-                        value={tarefaEdicao?.[0].importancia}
+                        value={importancia}
+                        onIonChange={capturaMudancaImportancia}
                       />
                     </IonItem>
                   </IonCol>
                 </IonRow>
 
-                {/*<IonRow>
-                  <IonCol>
-                    <IonItem color="light">
-                      <IonInput
-                        ref={dificuldadeEntrada}
-                        type="number"
-                        min="1"
-                        max="5"
-                        label="Dificuldade"
-                        label-placement="floating"
-                        placeholder="1 a 5"
-                        id="dificuldade-input"
-                        color="dark"
-                        value={tarefaEdicao?.[0].dificuldade}
-                      ></IonInput>
-                    </IonItem>
-                  </IonCol>
-                </IonRow>*/}
-
                 <IonRow>
                   <IonCol>
-                    <IonItem className="ion-text-center">
+                    <IonItem color="secondary" className="ion-text-center">
                       <IonLabel>Dificuldade</IonLabel>
                     </IonItem>
-                    <IonItem color="light">
+                    <IonItem color="secondary">
                       <IonRange
-                        ref={dificuldadeEntrada}
                         style={{ paddingLeft: "1rem", paddingRight: "1rem" }}
                         min={1}
                         max={5}
                         step={1}
                         snaps={true}
-                        value={tarefaEdicao?.[0].dificuldade}
+                        value={dificuldade}
+                        onIonChange={capturaMudancaDificuldade}
                       />
                     </IonItem>
                   </IonCol>
@@ -318,44 +370,44 @@ const PaginaTarefaEdicao: React.FC = () => {
 
                 <IonRow>
                   <IonCol>
-                    <IonItem color="light">
+                    <IonItem color="secondary">
                       <IonInput
-                        ref={recompensaEntrada}
-                        type="number"
-                        label="Recompensa"
-                        label-placement="floating"
-                        placeholder="Insira a recompensa"
-                        id="recompensa-input"
-                        color="dark"
-                        value={tarefaEdicao?.[0].recompensa}
-                      ></IonInput>
-                    </IonItem>
-                  </IonCol>
-                </IonRow>
-
-                <IonRow>
-                  <IonCol>
-                    <IonItem color="light">
-                      <IonInput
-                        ref={dataEntrada}
+                        onIonChange={capturaMudancaDataInicial}
                         type="date"
-                        label="Data"
+                        label="Data Inicial"
                         label-placement="floating"
                         placeholder="Insira a data"
                         id="data-input"
                         color="dark"
-                        value={tarefaEdicao?.[0].data}
+                        value={dataInicial}
                       ></IonInput>
                     </IonItem>
                   </IonCol>
                 </IonRow>
 
-                <IonButton onClick={atualizarTarefa}>
-                  <IonIcon slot="start" icon={save} />
-                  <IonLabel>Atualizar</IonLabel>
+                <IonRow>
+                  <IonCol>
+                    <IonItem color="secondary">
+                      <IonInput
+                        onIonChange={capturaMudancaDataFinal}
+                        type="date"
+                        label="Data Inicial"
+                        label-placement="floating"
+                        placeholder="Insira a data"
+                        id="data-input"
+                        color="dark"
+                        value={dataFinal}
+                      ></IonInput>
+                    </IonItem>
+                  </IonCol>
+                </IonRow>
+
+                <IonButton onClick={editarTarefa}>
+                  <IonIcon icon={save} slot="start" />
+                  <IonLabel>Editar</IonLabel>
                 </IonButton>
                 <PopupResultado resultado={resultadoCadastro} />
-              </IonGrid>
+              </IonGrid> : null}
             </>
           )}
         </div>

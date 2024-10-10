@@ -113,7 +113,7 @@ const PaginaBase: React.FC = () => {
       </IonHeader>
       <IonContent color="tertiary">
         {!carregamento ? (
-          <IonCard color="secondary">
+          <IonCard key="1" color="secondary">
             <IonCardHeader style={{ paddingBottom: "0px" }}>
               <div
                 className="circula-img"

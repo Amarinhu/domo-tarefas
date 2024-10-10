@@ -113,7 +113,7 @@ const PaginaBase: React.FC = () => {
           <div>
             {atributoItens.map((atributo, indice) => (
               <div>
-                <IonCard key={atributo.id} color="secondary">
+                <IonCard key={indice} color="secondary">
                   <IonCardHeader
                     style={{ paddingBottom: "0.3rem" }}
                     className="ion-text-center"
