@@ -18,6 +18,9 @@ import {
   IonSelectOption,
   IonSelect,
   IonRange,
+  IonText,
+  IonImg,
+  IonCard,
 } from "@ionic/react";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -47,6 +50,8 @@ const PaginaTarefaEdicao: React.FC = () => {
   const [resultadoCadastro, definirResultadoCadastro] = useState<string>("");
   const [templateSelecionado, definirTemplateSelecionado] = useState<any>([]);
   const [atributoSelecionado, definirAtributoSelecionado] = useState<Array<any>>([]);
+
+  const [mostraModalAtributo, defMostraModalAtributo] = useState<boolean>(false)
 
   const [templates, definirTemplates] = useState<any>([]);
   const [atributos, definirAtributos] = useState<any>([]);
@@ -139,11 +144,17 @@ const PaginaTarefaEdicao: React.FC = () => {
     try {
       await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
         await db?.query(
-          ` INSERT OR REPLACE INTO Tarefa (id, nome, observacao, 
-          importancia, dificuldade, dataInicio, dataFim, completa, ativo)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          ` UPDATE Tarefa
+           SET nome = ?, 
+               observacao = ?, 
+               importancia = ?, 
+               dificuldade = ?, 
+               dataInicio = ?, 
+               dataFim = ?, 
+               completa = ?, 
+               ativo = ?
+           WHERE id = ?`,
           [
-            id,
             nomeInserido,
             observacaoInserida,
             importanciaInserida,
@@ -151,12 +162,22 @@ const PaginaTarefaEdicao: React.FC = () => {
             dataIniInserida,
             dataFimInserida,
             0,
-            1
+            1,
+            id
           ]
         );
 
+        await db?.query(`DELETE FROM ListaAtributos WHERE tarefa_id = ?`, [id])
+
+        for (const atributoID of atributoSelecionado) {
+          await db?.query(`INSERT OR REPLACE INTO ListaAtributos 
+            (atributo_id, tarefa_id, ativo)
+            values (?, ?, ?)`, [atributoID, id, 1])
+        }
+
         definirResultadoCadastro("Tarefa editada com sucesso!");
       });
+
     } catch (erro) {
       console.log(erro);
       definirResultadoCadastro(
@@ -242,6 +263,24 @@ const PaginaTarefaEdicao: React.FC = () => {
     }
   }, [templateSelecionado]);
 
+  const addAtributoTarefa = (id: Number) => {
+    try {
+      if (atributoSelecionado.includes(id)) {
+        console.log('ID ENCONTRADO')
+        definirAtributoSelecionado((atributosAnteriores) =>
+          atributosAnteriores.filter(att => att !== id))
+      } else {
+        definirAtributoSelecionado((atributosAnteriores) => [...atributosAnteriores, id]);
+      }
+      console.log(id);
+    } catch (erro) {
+      console.error(erro);
+    } finally {
+      defMostraModalAtributo(false);
+      console.log(atributoSelecionado)
+    }
+  };
+
   const teste = async () => {
     await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
       await db?.query(
@@ -266,151 +305,199 @@ const PaginaTarefaEdicao: React.FC = () => {
         <BarraSuperior icone={book} titulo="Editar Tarefa" />
       </IonHeader>
       <IonContent color="tertiary">
-        <IonButton onClick={teste}>TESTE</IonButton>
-        <div className="ion-padding">
-          {carregamento ? (
-            <CirculoCarregamento />
-          ) : (
-            <>
-              {nome && observacao && importancia && dificuldade && dataFinal && dataInicial ? <IonGrid className="ion-text-center ion-margin">
-                {false && atributos && atributoSelecionado ? (
-                  <IonRow>
-                    <IonCol>
-                      <IonItem color="secondary">
-                        <IonSelect
-                          multiple={true}
-                          value={atributoSelecionado}
-                          placeholder="Atributo"
-                          onIonChange={capturaMudancaAtributo}
-                        >
-                          {atributos.map((atributo: any) => (
-                            <IonSelectOption
-                              key={atributo.id}
-                              value={atributo.id}
+        <IonCard color="primary">
+          <div key="divG" className="ion-padding">
+            {carregamento ? (
+              <CirculoCarregamento />
+            ) : (
+              <>
+                {(nome && observacao && importancia && dificuldade && dataFinal && dataInicial) || id ?
+                  <IonGrid className="ion-text-center ion-margin">
+                    {atributos ?
+                      <IonItem lines="none" color="primary" onClick={() => defMostraModalAtributo(true)}>
+                        <IonText style={{ marginRight: "1rem", fontWeight: "bold" }}>Atributos:</IonText>
+                        <div style={{ alignItems: "center", display: "flex" }}>
+                          {atributoSelecionado.length > 0 ?
+                            atributoSelecionado.map((atributo: any) => (
+                              <IonImg
+                                key={atributo}
+                                style={{
+                                  width: "2.5rem",
+                                  height: "2.5rem",
+                                  borderRadius: "50%",
+                                  objectFit: "cover",
+                                  overflow: "hidden",
+                                  marginRight: "0.5rem",
+                                }}
+                                src={atributos.find((att: { id: any; }) => att.id === atributo)?.imagem} />
+                            ))
+                            : <IonText>Clique para adicionar.</IonText>}
+                        </div>
+                      </IonItem> : null}
+
+                    {/*atributos && atributoSelecionado ? (
+                      <IonRow>
+                        <IonCol>
+                          <IonItem color="secondary">
+                            <IonSelect
+                              multiple={true}
+                              value={atributoSelecionado}
+                              placeholder="Atributo"
+                              onIonChange={capturaMudancaAtributo}
                             >
-                              {atributo.nome}
-                            </IonSelectOption>
-                          ))}
-                        </IonSelect>
-                      </IonItem>
-                    </IonCol>
-                  </IonRow>
-                ) : null}
+                              {atributos.map((atributo: any) => (
+                                <IonSelectOption
+                                  key={atributo.id}
+                                  value={atributo.id}
+                                >
+                                  {atributo.nome}
+                                </IonSelectOption>
+                              ))}
+                            </IonSelect>
+                          </IonItem>
+                        </IonCol>
+                      </IonRow>
+                    ) : null*/}
 
-                <IonRow>
-                  <IonCol>
-                    <IonItem color="secondary">
-                      <IonInput
-                        onIonInput={capturaMudancaNome}
-                        label="Nome"
-                        label-placement="floating"
-                        placeholder="Insira o nome da tarefa"
-                        id="nome-input"
-                        color="dark"
-                        value={nome}
-                      ></IonInput>
-                    </IonItem>
-                  </IonCol>
-                </IonRow>
+                    <IonRow>
+                      <IonCol>
+                        <IonItem color="secondary">
+                          <IonInput
+                            onIonInput={capturaMudancaNome}
+                            label="Nome"
+                            label-placement="floating"
+                            placeholder="Insira o nome da tarefa"
+                            id="nome-input"
+                            color="dark"
+                            value={nome}
+                          ></IonInput>
+                        </IonItem>
+                      </IonCol>
+                    </IonRow>
 
-                <IonRow>
-                  <IonCol>
-                    <IonItem color="secondary">
-                      <IonTextarea
-                        onIonInput={capturaMudancaObservacao}
-                        label="Observação"
-                        label-placement="floating"
-                        placeholder="Insira a observação da tarefa"
-                        autoGrow={true}
-                        id="observacao-input"
-                        color="dark"
-                        value={observacao}
-                      ></IonTextarea>
-                    </IonItem>
-                  </IonCol>
-                </IonRow>
+                    <IonRow>
+                      <IonCol>
+                        <IonItem color="secondary">
+                          <IonTextarea
+                            onIonInput={capturaMudancaObservacao}
+                            label="Observação"
+                            label-placement="floating"
+                            placeholder="Insira a observação da tarefa"
+                            autoGrow={true}
+                            id="observacao-input"
+                            color="dark"
+                            value={observacao}
+                          ></IonTextarea>
+                        </IonItem>
+                      </IonCol>
+                    </IonRow>
 
-                <IonRow>
-                  <IonCol>
-                    <IonItem color="secondary" className="ion-text-center">
-                      <IonLabel>Importância</IonLabel>
-                    </IonItem>
-                    <IonItem color="secondary">
-                      <IonRange
-                        style={{ paddingLeft: "1rem", paddingRight: "1rem" }}
-                        min={1}
-                        max={5}
-                        step={1}
-                        snaps={true}
-                        value={importancia}
-                        onIonChange={capturaMudancaImportancia}
-                      />
-                    </IonItem>
-                  </IonCol>
-                </IonRow>
+                    <IonRow>
+                      <IonCol>
+                        <IonItem color="secondary" className="ion-text-center">
+                          <IonLabel>Importância</IonLabel>
+                        </IonItem>
+                        <IonItem color="secondary">
+                          <IonRange
+                            style={{ paddingLeft: "1rem", paddingRight: "1rem" }}
+                            min={1}
+                            max={5}
+                            step={1}
+                            snaps={true}
+                            value={importancia}
+                            onIonChange={capturaMudancaImportancia}
+                          />
+                        </IonItem>
+                      </IonCol>
+                    </IonRow>
 
-                <IonRow>
-                  <IonCol>
-                    <IonItem color="secondary" className="ion-text-center">
-                      <IonLabel>Dificuldade</IonLabel>
-                    </IonItem>
-                    <IonItem color="secondary">
-                      <IonRange
-                        style={{ paddingLeft: "1rem", paddingRight: "1rem" }}
-                        min={1}
-                        max={5}
-                        step={1}
-                        snaps={true}
-                        value={dificuldade}
-                        onIonChange={capturaMudancaDificuldade}
-                      />
-                    </IonItem>
-                  </IonCol>
-                </IonRow>
+                    <IonRow>
+                      <IonCol>
+                        <IonItem color="secondary" className="ion-text-center">
+                          <IonLabel>Dificuldade</IonLabel>
+                        </IonItem>
+                        <IonItem color="secondary">
+                          <IonRange
+                            style={{ paddingLeft: "1rem", paddingRight: "1rem" }}
+                            min={1}
+                            max={5}
+                            step={1}
+                            snaps={true}
+                            value={dificuldade}
+                            onIonChange={capturaMudancaDificuldade}
+                          />
+                        </IonItem>
+                      </IonCol>
+                    </IonRow>
 
-                <IonRow>
-                  <IonCol>
-                    <IonItem color="secondary">
-                      <IonInput
-                        onIonChange={capturaMudancaDataInicial}
-                        type="date"
-                        label="Data Inicial"
-                        label-placement="floating"
-                        placeholder="Insira a data"
-                        id="data-input"
-                        color="dark"
-                        value={dataInicial}
-                      ></IonInput>
-                    </IonItem>
-                  </IonCol>
-                </IonRow>
+                    <IonRow>
+                      <IonCol>
+                        <IonItem color="secondary">
+                          <IonInput
+                            onIonChange={capturaMudancaDataInicial}
+                            type="date"
+                            label="Data Inicial"
+                            label-placement="floating"
+                            placeholder="Insira a data"
+                            id="data-input"
+                            color="dark"
+                            value={dataInicial}
+                          ></IonInput>
+                        </IonItem>
+                      </IonCol>
+                    </IonRow>
 
-                <IonRow>
-                  <IonCol>
-                    <IonItem color="secondary">
-                      <IonInput
-                        onIonChange={capturaMudancaDataFinal}
-                        type="date"
-                        label="Data Inicial"
-                        label-placement="floating"
-                        placeholder="Insira a data"
-                        id="data-input"
-                        color="dark"
-                        value={dataFinal}
-                      ></IonInput>
-                    </IonItem>
-                  </IonCol>
-                </IonRow>
+                    <IonRow>
+                      <IonCol>
+                        <IonItem color="secondary">
+                          <IonInput
+                            onIonChange={capturaMudancaDataFinal}
+                            type="date"
+                            label="Data Inicial"
+                            label-placement="floating"
+                            placeholder="Insira a data"
+                            id="data-input"
+                            color="dark"
+                            value={dataFinal}
+                          ></IonInput>
+                        </IonItem>
+                      </IonCol>
+                    </IonRow>
 
-                <IonButton onClick={editarTarefa}>
-                  <IonIcon icon={save} slot="start" />
-                  <IonLabel>Editar</IonLabel>
-                </IonButton>
-                <PopupResultado resultado={resultadoCadastro} />
-              </IonGrid> : null}
-            </>
-          )}
-        </div>
+                    <IonButton onClick={editarTarefa}>
+                      <IonIcon icon={save} slot="start" />
+                      <IonLabel>Editar</IonLabel>
+                    </IonButton>
+                    <PopupResultado resultado={resultadoCadastro} />
+                  </IonGrid> : null}
+              </>
+            )}
+          </div>
+        </IonCard>
+
+        {atributos ?
+          <IonModal
+            isOpen={mostraModalAtributo}
+            onDidDismiss={() => defMostraModalAtributo(false)}
+            className="custom-modal"
+          >
+            {atributos.map((atributo: any) => (
+              <IonItem key={atributo.id} color="secondary" onClick={() => addAtributoTarefa(atributo.id)} >
+                <IonImg
+                  style={{
+                    width: "2.5rem",
+                    height: "2.5rem",
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                    overflow: "hidden",
+                  }}
+                  src={atributo.imagem}>
+                  {atributo.imagem}
+                </IonImg>
+                <IonTitle>{atributo.nome}</IonTitle>
+              </IonItem>
+            ))}
+          </IonModal> : null}
       </IonContent>
     </IonApp>
   );

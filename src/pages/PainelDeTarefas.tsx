@@ -71,9 +71,9 @@ const PainelDeTarefas: React.FC = () => {
         GROUP_CONCAT(atributo.nome) as atributo_nome
     FROM 
         tarefa
-    JOIN
+    LEFT JOIN
         ListaAtributos ON tarefa.id = ListaAtributos.tarefa_id
-    JOIN
+    LEFT JOIN
         Atributo ON ListaAtributos.atributo_id = Atributo.id
     WHERE 
         tarefa.ativo = 1
@@ -342,13 +342,17 @@ const PainelDeTarefas: React.FC = () => {
 
     const nomeMes = meses[mes - 1];
     return `${dia} de ${nomeMes}`;
+
+    return data
   };
 
   const separaImagens = (imagens: string) => {
-    const imagensArray = imagens.split(',')
-    const filtraElementos = imagensArray.filter((imagem, index) => (index + 1) % 2 === 0);
+    if (imagens) {
+      const imagensArray = imagens.split(',')
+      const filtraElementos = imagensArray.filter((imagem, index) => (index + 1) % 2 === 0);
 
-    return filtraElementos
+      return filtraElementos
+    } else return [null]
   }
 
   const IniciarBanco = async () => {
@@ -428,7 +432,7 @@ const PainelDeTarefas: React.FC = () => {
         />
       </IonHeader>
       <IonContent color="tertiary">
-       {/* <IonButton onClick={IniciarBanco}>Iniciar Banco</IonButton>*/}
+        {/* <IonButton onClick={IniciarBanco}>Iniciar Banco</IonButton>*/}
         {mostraFiltro == true ? (
           <IonCard color="secondary">
             <IonCardContent>
@@ -488,7 +492,7 @@ const PainelDeTarefas: React.FC = () => {
           </IonCard>
         ) : null}
 
-        <IonCard color="secondary">
+        <IonCard key='total' color="secondary">
           <IonCardContent className="ion-text-center">
             <IonText
               style={{ fontSize: "1.5rem" }}
@@ -523,11 +527,11 @@ const PainelDeTarefas: React.FC = () => {
                             className="ion-text-center"
                             color="light"
                           >
-                            • {item.id} {item.nome}
+                            • {item.nome}
                           </IonCardTitle>
                           <div style={{ display: 'flex', gap: '0.5rem' }}>
                             {separaImagens(item.imagens).map((imagem, indice) => (
-                              <IonImg
+                              imagem ? <IonImg
                                 style={{
                                   width: "2.5rem",
                                   height: "2.5rem",
@@ -537,7 +541,7 @@ const PainelDeTarefas: React.FC = () => {
                                 }}
                                 key={indice}
                                 src={`data:image/jpeg;base64,${imagem}`}
-                              />
+                              /> : null
                             ))}
                           </div>
                         </IonCardHeader>
