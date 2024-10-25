@@ -169,7 +169,7 @@ const PaginaTarefaCadastro: React.FC = () => {
       );
     } finally {
       definirCarregamento(false);
-      /*navegar.replace("/PainelDeTarefas");*/
+      navegar.replace("/PainelDeTarefas");
     }
   };
 

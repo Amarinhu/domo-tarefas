@@ -433,6 +433,60 @@ const PainelDeTarefas: React.FC = () => {
       </IonHeader>
       <IonContent color="tertiary">
         {/* <IonButton onClick={IniciarBanco}>Iniciar Banco</IonButton>*/}
+        
+        {/*mostraFiltro == true ? (
+          <IonCard color="secondary">
+            <IonCardContent>
+              <IonGrid>
+                {linhasFiltro.map((linha, indice) => (
+                  <IonRow key={indice}>
+                    <IonCol size="5">
+                      <IonSelect
+                        id={`campo-filtro-${indice}`}
+                        label="Selecione"
+                        labelPlacement="floating"
+                      >
+                        <IonSelectOption>Atributo</IonSelectOption>
+                        <IonSelectOption>Nome</IonSelectOption>
+                        <IonSelectOption>Observação</IonSelectOption>
+                        <IonSelectOption>Importância</IonSelectOption>
+                        <IonSelectOption>Dificuldade</IonSelectOption>
+                        <IonSelectOption>Data Inicial</IonSelectOption>
+                        <IonSelectOption>Data Final</IonSelectOption>
+                      </IonSelect>
+                    </IonCol>
+                    <IonCol size="5">
+                      <IonItem lines="none" color="secondary">
+                        <IonInput id={`valor-filtro-${indice}`}></IonInput>
+                      </IonItem>
+                    </IonCol>
+                    <IonCol size="2">
+                      <IonSelect
+                        id={`operador-logico-${indice}`}
+                        label="OP"
+                        labelPlacement="floating"
+                      >
+                        <IonSelectOption>E</IonSelectOption>
+                        <IonSelectOption>OU</IonSelectOption>
+                      </IonSelect>
+                    </IonCol>
+                  </IonRow>
+                ))}
+
+                <IonRow>
+                  <IonCol className="flex-center-icon-text">
+                    <IonButtons>
+                      <IonButton onClick={aplicaFiltro}>
+                        <IonIcon className="icon-large" icon={search}></IonIcon>
+                      </IonButton>
+                    </IonButtons>
+                  </IonCol>
+                </IonRow>
+              </IonGrid>
+            </IonCardContent>
+          </IonCard>
+        ) : null*/}
+
         {mostraFiltro == true ? (
           <IonCard color="secondary">
             <IonCardContent>

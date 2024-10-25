@@ -184,7 +184,7 @@ const PaginaTarefaEdicao: React.FC = () => {
         "Erro ao cadastrar tarefa. Tente novamente mais tarde."
       );
     } finally {
-      /*navegar.replace("/PainelDeTarefas");*/
+      navegar.replace("/PainelDeTarefas");
     }
   };
 
@@ -453,7 +453,7 @@ const PaginaTarefaEdicao: React.FC = () => {
                           <IonInput
                             onIonChange={capturaMudancaDataFinal}
                             type="date"
-                            label="Data Inicial"
+                            label="Data Final"
                             label-placement="floating"
                             placeholder="Insira a data"
                             id="data-input"
