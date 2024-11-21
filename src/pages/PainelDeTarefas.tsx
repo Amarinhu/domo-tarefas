@@ -260,6 +260,9 @@ const PainelDeTarefas: React.FC = () => {
           }
         }
       });
+
+      defAcaoHeroi("Attack.png");
+      defQtdFrameHeroi(6);
     } catch (erro) {
       console.error(erro);
     }
@@ -353,6 +356,17 @@ const PainelDeTarefas: React.FC = () => {
     } finally {
       aplicaFiltro();
       fecharModais();
+
+      defAcaoMonstro('Attack.png');
+
+      const timeout = setTimeout(() => {
+        defAcaoHeroi('Hurt.png'); 
+      }, 1800);
+
+      const timeout2 = setTimeout(() => {
+        defAcaoMonstro('Idle.png'); 
+        defAcaoHeroi('Idle.png'); 
+      }, 3600);
     }
   };
 
@@ -542,6 +556,36 @@ const PainelDeTarefas: React.FC = () => {
     defMostraModalAtributo(true);
   };
 
+  const [frameHeroi, defFrameHeroi] = useState(0);
+  const [qtdFrameHeroi, defQtdFrameHeroi] = useState(4);
+  const [qtdFrameMonstro, defQtdFrameMonstro] = useState(4);
+  const [frameMonstro, defFrameMonstro] = useState(0);
+  const [monstroId, defMonstroId] = useState(0);
+
+  const [acaoHeroi, defAcaoHeroi] = useState("Idle.png");
+  const [acaoMonstro, defAcaoMonstro] = useState("Idle.png");
+
+  useEffect(() => {
+    const intervalo = setInterval(() => {
+      defFrameHeroi((ultimoFrame) => (ultimoFrame + 1) % 4);
+    }, 300);
+    return () => clearInterval(intervalo);
+  }, []);
+
+  useEffect(() => {
+    const intervalo = setInterval(() => {
+      defFrameMonstro((ultimoFrame) => (ultimoFrame + 1) % 4);
+    }, 300);
+    return () => clearInterval(intervalo);
+  }, []);
+
+  const monstrosIdle = ["Goblin", "Mushroom", "Skeleton"];
+
+  useEffect(() => {
+    const idmMnstroRandom = Math.floor(Math.random() * monstrosIdle.length);
+    defMonstroId(idmMnstroRandom);
+  }, []);
+
   return (
     <IonPage>
       <IonHeader>
@@ -659,83 +703,92 @@ const PainelDeTarefas: React.FC = () => {
                   </IonRow>
                 ))}
                 <IonRow
-                  style={{ paddingBottom: "1rem" }}
+                  style={{ paddingBottom: "0.5rem" }}
                   class="ion-align-items-center ion-justify-content-center"
                 >
                   <IonButton fill="clear" onClick={aplicaFiltro}>
                     <IonIcon className="icon-large" icon={search}></IonIcon>
                   </IonButton>
                 </IonRow>
+                <IonRow
+                  style={{ paddingBottom: "1rem" }}
+                  class="ion-align-items-center ion-justify-content-center"
+                  key="total"
+                >
+                  <IonText style={{ fontSize: "1.2rem" }}>
+                    Total: {quantidadeDeCards}
+                  </IonText>
+                </IonRow>
               </IonGrid>
             </IonCardContent>
           </IonCard>
         ) : null}
 
-        {/*mostraFiltro == true ? (
-          <IonCard color="secondary">
-            <IonCardContent>
-              <IonGrid>
-                <IonRow>
-                  <IonCol>
-                    <IonButton onClick={adicionarCampoFiltro} expand="block">
-                      Adicionar Filtro +
-                    </IonButton>
-                  </IonCol>
-                </IonRow>
+        <IonCard
+          style={{
+            backgroundImage: `url("../src/animacoes/background.gif")`,
+            backgroundSize: "cover",
+            backgroundPosition: "center -95px",
+            backgroundRepeat: "no-repeat",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            width: "95vw",
+            height: "15vh",
+            overflow: "hidden",
+          }}
+          color="secondary"
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              width: "100%",
+              paddingLeft: "2rem",
+              paddingRight: "2rem",
+            }}
+          >
+            <div
+              style={{
+                position: "relative",
+                width: "80px",
+                height: "80px",
+                overflow: "hidden",
+              }}
+            >
+              <IonImg
+                style={{
+                  position: "absolute",
+                  width: "320px",
+                  height: "80px",
+                  transform: `translateX(-${frameHeroi * 80}px)`,
+                }}
+                src={`../src/animacoes/Hero/${acaoHeroi}`}
+              ></IonImg>
+            </div>
 
-                {linhasFiltro.map((linha, indice) => (
-                  <IonRow key={indice}>
-                    <IonCol size="5">
-                      <IonSelect
-                        id={`campo-filtro-${indice}`}
-                        label="Selecione"
-                        labelPlacement="floating"
-                      >
-                        <IonSelectOption>Atributo</IonSelectOption>
-                        <IonSelectOption>Nome</IonSelectOption>
-                        <IonSelectOption>Observação</IonSelectOption>
-                        <IonSelectOption>Importância</IonSelectOption>
-                        <IonSelectOption>Dificuldade</IonSelectOption>
-                      </IonSelect>
-                    </IonCol>
-                    <IonCol size="5">
-                      <IonItem lines="none" color="secondary">
-                        <IonInput id={`valor-filtro-${indice}`}></IonInput>
-                      </IonItem>
-                    </IonCol>
-                    <IonCol size="2">
-                      <IonSelect
-                        id={`operador-logico-${indice}`}
-                        label="OP"
-                        labelPlacement="floating"
-                      >
-                        <IonSelectOption>E</IonSelectOption>
-                        <IonSelectOption>OU</IonSelectOption>
-                      </IonSelect>
-                    </IonCol>
-                  </IonRow>
-                ))}
-
-                <IonRow>
-                  <IonCol className="flex-center-icon-text">
-                    <IonButtons>
-                      <IonButton onClick={aplicaFiltro}>
-                        <IonIcon className="icon-large" icon={search}></IonIcon>
-                      </IonButton>
-                    </IonButtons>
-                  </IonCol>
-                </IonRow>
-              </IonGrid>
-            </IonCardContent>
-          </IonCard>
-        ) : null*/}
-
-        <IonCard key="total" color="secondary">
-          <IonCardContent className="ion-text-center">
-            <IonText style={{ fontSize: "1.5rem" }}>
-              Total: {quantidadeDeCards}
-            </IonText>
-          </IonCardContent>
+            <div
+              style={{
+                position: "relative",
+                width: "80px",
+                height: "80px",
+                overflow: "hidden",
+              }}
+            >
+              <IonImg
+                style={{
+                  position: "absolute",
+                  width: "700px",
+                  height: "175px",
+                  top: "-40px",
+                  left: "-40px",
+                  transform: `scaleX(-1) translateX(${frameMonstro * 175}px)`,
+                }}
+                src={`../src/animacoes/${monstrosIdle[monstroId]}/${acaoMonstro}`}
+              />
+            </div>
+          </div>
         </IonCard>
 
         <div>
