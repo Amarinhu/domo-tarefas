@@ -73,6 +73,7 @@ import IdleMonstEsqueleto from "../animacoes/Skeleton/Idle.png";
 import AttackMonstEsqueleto from "../animacoes/Skeleton/Attack.png";
 
 import BackGround from "../animacoes/background.gif";
+import Fumaca from "../animacoes/fumaca.gif";
 
 const PainelDeTarefas: React.FC = () => {
   const [estadoCarregamento, definirCarregamento] = useState(false);
@@ -288,6 +289,24 @@ const PainelDeTarefas: React.FC = () => {
       });
 
       defAcaoHeroi(AttackHeroi);
+
+      setTimeout(() => {
+        defAcaoMonstro(monstrosHurt[monstroId]);
+      }, 900);
+
+      setTimeout(() => {
+        defAcaoHeroi(IdleHeroi);
+        defAcaoMonstro(monstrosDeath[monstroId]);
+      }, 1800);
+
+      setTimeout(() => {
+        defEstadoFumaca(true);
+      }, 2000);
+
+      setTimeout(() => {
+        sorteiaMonstro();
+        defEstadoFumaca(false);
+      }, 2400);
     } catch (erro) {
       console.error(erro);
     }
@@ -299,7 +318,7 @@ const PainelDeTarefas: React.FC = () => {
     const comandoCompleta = `UPDATE Tarefa SET completa = 1 WHERE id = ?`;
     try {
       await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
-        await db?.query(comandoCompleta, [id]);
+        /* ARRUMA ISSO DPS await db?.query(comandoCompleta, [id]); */
         const respostaSelect = await db?.query(comandoSQLSelect, [id]);
 
         if (
@@ -587,8 +606,9 @@ const PainelDeTarefas: React.FC = () => {
   const [frameMonstro, defFrameMonstro] = useState(0);
   const [monstroId, defMonstroId] = useState(0);
 
+  const [estadoFumaca, defEstadoFumaca] = useState(false);
   const [acaoHeroi, defAcaoHeroi] = useState(IdleHeroi);
-  const [acaoMonstro, defAcaoMonstro] = useState(IdleMonstCogumelo);
+  const [acaoMonstro, defAcaoMonstro] = useState(IdleMonstEsqueleto);
 
   useEffect(() => {
     const intervalo = setInterval(() => {
@@ -605,6 +625,14 @@ const PainelDeTarefas: React.FC = () => {
   }, []);
 
   const monstrosIdle = [IdleMonstCogumelo, IdleMonstGoblin, IdleMonstEsqueleto];
+  const monstrosHurt = [HurtMonstCogumelo, HurtMonstGoblin, HurtMonstEsqueleto];
+  const monstrosDeath = [DeathMonstCogumelo, DeathMonstGoblin, DeathMonstEsqueleto];
+
+  const sorteiaMonstro = () => {
+    const idmMnstroRandom = Math.floor(Math.random() * monstrosIdle.length);
+    defMonstroId(idmMnstroRandom);
+    defAcaoMonstro(monstrosIdle[idmMnstroRandom]);
+  };
 
   useEffect(() => {
     const idmMnstroRandom = Math.floor(Math.random() * monstrosIdle.length);
@@ -813,6 +841,8 @@ const PainelDeTarefas: React.FC = () => {
                 }}
                 src={`${acaoMonstro}`}
               />
+
+              {estadoFumaca ? <IonImg style={{ zIndex : "100" }} src={Fumaca} /> : null}
             </div>
           </div>
         </IonCard>
