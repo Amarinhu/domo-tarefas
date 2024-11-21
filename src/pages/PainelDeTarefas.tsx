@@ -365,7 +365,7 @@ const PainelDeTarefas: React.FC = () => {
     const comandoCompleta = `UPDATE Tarefa SET completa = 1 WHERE id = ?`;
     try {
       await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
-        // await db?.query(comandoCompleta, [id]);
+        await db?.query(comandoCompleta, [id]);
         const respostaSelect = await db?.query(comandoSQLSelect, [id]);
 
         if (
