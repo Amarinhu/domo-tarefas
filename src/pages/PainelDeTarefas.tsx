@@ -51,6 +51,27 @@ import BarraInferior from "../components/BarraInferiorControles";
 import HurtHeroi from "../animacoes/Hero/Hurt.png";
 import IdleHeroi from "../animacoes/Hero/Idle.png";
 import AttackHeroi from "../animacoes/Hero/Attack.png";
+
+import HurtMonstOlho from "../animacoes/Flying_eye/Hurt.png";
+import DeathMonstOlho from "../animacoes/Flying_eye/Death.png";
+import IdleMonstOlho from "../animacoes/Flying_eye/Idle.png";
+import AttackMonstOlho from "../animacoes/Flying_eye/Attack.png";
+
+import HurtMonstGoblin from "../animacoes/Goblin/Hurt.png";
+import DeathMonstGoblin from "../animacoes/Goblin/Death.png";
+import IdleMonstGoblin from "../animacoes/Goblin/Idle.png";
+import AttackMonstGoblin from "../animacoes/Goblin/Attack.png";
+
+import HurtMonstCogumelo from "../animacoes/Mushroom/Hurt.png";
+import DeathMonstCogumelo from "../animacoes/Mushroom/Death.png";
+import IdleMonstCogumelo from "../animacoes/Mushroom/Idle.png";
+import AttackMonstCogumelo from "../animacoes/Mushroom/Attack.png";
+
+import HurtMonstEsqueleto from "../animacoes/Skeleton/Hurt.png";
+import DeathMonstEsqueleto from "../animacoes/Skeleton/Death.png";
+import IdleMonstEsqueleto from "../animacoes/Skeleton/Idle.png";
+import AttackMonstEsqueleto from "../animacoes/Skeleton/Attack.png";
+
 import BackGround from "../animacoes/background.gif";
 
 const PainelDeTarefas: React.FC = () => {
@@ -567,7 +588,7 @@ const PainelDeTarefas: React.FC = () => {
   const [monstroId, defMonstroId] = useState(0);
 
   const [acaoHeroi, defAcaoHeroi] = useState(IdleHeroi);
-  const [acaoMonstro, defAcaoMonstro] = useState("Idle.png");
+  const [acaoMonstro, defAcaoMonstro] = useState(IdleMonstCogumelo);
 
   useEffect(() => {
     const intervalo = setInterval(() => {
@@ -583,11 +604,12 @@ const PainelDeTarefas: React.FC = () => {
     return () => clearInterval(intervalo);
   }, []);
 
-  const monstrosIdle = ["Goblin", "Mushroom", "Skeleton"];
+  const monstrosIdle = [IdleMonstCogumelo, IdleMonstGoblin, IdleMonstEsqueleto];
 
   useEffect(() => {
     const idmMnstroRandom = Math.floor(Math.random() * monstrosIdle.length);
     defMonstroId(idmMnstroRandom);
+    defAcaoMonstro(monstrosIdle[idmMnstroRandom]);
   }, []);
 
   return (
@@ -789,7 +811,7 @@ const PainelDeTarefas: React.FC = () => {
                   left: "-40px",
                   transform: `scaleX(-1) translateX(${frameMonstro * 175}px)`,
                 }}
-                src={`../src/animacoes/${monstrosIdle[monstroId]}/${acaoMonstro}`}
+                src={`${acaoMonstro}`}
               />
             </div>
           </div>
