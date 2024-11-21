@@ -41,6 +41,11 @@ justify-content: center;
 align-items: center;
 }
 
+.desativado {
+  color: #6c757d;
+  opacity: 1; 
+}
+
 ion-content {
     --ion-padding: 0.1rem;
   }

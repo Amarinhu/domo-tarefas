@@ -57,6 +57,24 @@ const PainelDeTarefas: React.FC = () => {
   const [modalDel, mostraModalDel] = useState<boolean>(false);
   const [idTarefaSel, defIdTarefaSel] = useState<number>(0);
 
+  const [mostraModalFiltro, defMostraModalFiltro] = useState<boolean>(false);
+  const [mostraModalLogico, defMostraModalLogico] = useState<boolean>(false);
+  const [modalFiltroSel, defModalFiltroSel] = useState<number>(0);
+
+  const [atributos, definirAtributos] = useState<any>([]);
+  const [mostraModalAtributo, defMostraModalAtributo] =
+    useState<boolean>(false);
+
+  const [itensFiltro, defItensFiltro] = useState<Array<any>>([
+    {
+      id: 0,
+      valorLabel: "SELECIONE",
+      valorInput: "",
+      valorLogico: "⦿",
+      imagem: "",
+    },
+  ]);
+
   const { executarAcaoSQL, iniciado, iniciaTabelas } = usaSQLiteDB();
 
   const quantidadeDeCards = tarefaFiltradas?.length;
@@ -67,6 +85,7 @@ const PainelDeTarefas: React.FC = () => {
         tarefa.observacao, 
         tarefa.dataInicio,
         tarefa.dataFim,
+        GROUP_CONCAT(atributo.id) as atributo_ids,
         GROUP_CONCAT(atributo.imagem) as imagens,
         GROUP_CONCAT(atributo.nome) as atributo_nome
     FROM 
@@ -79,104 +98,108 @@ const PainelDeTarefas: React.FC = () => {
         tarefa.ativo = 1
     AND 
         tarefa.completa = 0
-    GROUP BY 
-        tarefa.id
     `;
   useEffect(() => {
-    iniciaTabelas()
-  }, [])
+    iniciaTabelas();
+  }, []);
   useEffect(() => {
     try {
       carregaTarefas();
-    } catch (erro) { console.error(erro) } finally {
-      aplicaFiltro()
+      buscaAtributos();
+    } catch (erro) {
+      console.error(erro);
+    } finally {
+      aplicaFiltro();
     }
   }, [iniciado]);
+
+  const buscaAtributos = async () => {
+    try {
+      await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
+        const resultado = await db?.query(`SELECT * FROM ATRIBUTO 
+          WHERE ativo = 1`);
+        console.log(resultado);
+        definirAtributos(resultado?.values);
+      });
+    } catch (erro) {
+      console.log(erro);
+    }
+  };
 
   const aplicaFiltro = async () => {
     let comandoSQL = respostaTarefasQuery;
 
-    let condicoes: any = [];
-    let operadoresLogicos: any = [];
-
-    linhasFiltro.forEach((linha, indice) => {
-      if (
-        document &&
-        document.querySelector(`#campo-filtro-${indice}`) &&
-        document.querySelector(`#valor-filtro-${indice}`) &&
-        document.querySelector(`#operador-logico-${indice}`)
-      ) {
-        let campoFiltro = document!.querySelector(
-          `#campo-filtro-${indice}`
-        )!.value;
-        let valorFiltro = document!.querySelector(
-          `#valor-filtro-${indice}`
-        )!.value;
-        let operadorLogico = document!.querySelector(
-          `#operador-logico-${indice}`
-        )!.value;
-
-        let condicao: any = "";
-        if (campoFiltro && valorFiltro) {
-          switch (campoFiltro) {
-            case "Atributo":
-              condicao = ` Atributo.nome LIKE '%${valorFiltro}%' `;
-              break;
-            case "Nome":
-              condicao = ` tarefa.nome LIKE '%${valorFiltro}%' `;
-              break;
-            case "Observação":
-              condicao = ` tarefa.observacao LIKE '%${valorFiltro}%' `;
-              break;
-            case "Importância":
-              condicao = ` tarefa.importancia = ${valorFiltro} `;
-              break;
-            case "Dificuldade":
-              condicao = ` tarefa.dificuldade = ${valorFiltro} `;
-              break;
-            default:
-              break;
-          }
-
-          if (condicao) {
-            condicoes.push(condicao);
-            if (operadorLogico == "OU") {
-              operadorLogico = " OR ";
-            }
-            if (operadorLogico == "E") {
-              operadorLogico = " AND ";
-            }
-            operadoresLogicos.push(operadorLogico);
-          }
-        }
-      }
-    });
-
-    if (condicoes.length > 0) {
-      comandoSQL +=
-        " AND (" +
-        condicoes
-          .map((condicao: any, indice: number) => {
-            return indice === 0
-              ? condicao
-              : `${operadoresLogicos[indice - 1]} ${condicao}`;
-          })
-          .join(" ") +
-        ")";
+    if (
+      itensFiltro.length > 0 &&
+      itensFiltro[0].valorLabel !== "SELECIONE" &&
+      itensFiltro[0].valorInput !== ""
+    ) {
+      comandoSQL += ` 
+    AND `;
     }
 
+    for (const item of itensFiltro) {
+      if (item.valorLabel !== "SELECIONE" && item.valorInput !== "") {
+        switch (item.valorLabel) {
+          case "ATRIBUTOS":
+            comandoSQL += ` EXISTS (
+                  SELECT 1
+                  FROM Atributo at
+                  JOIN ListaAtributos la ON at.id = la.atributo_id
+                  WHERE la.tarefa_id = tarefa.id AND at.id = ${item.valorInput}
+              ) `;
+            break;
+          case "NOME":
+            comandoSQL += ` tarefa.nome LIKE '%${item.valorInput}%' `;
+            break;
+          case "OBSERVAÇÃO":
+            comandoSQL += ` tarefa.observacao LIKE '%${item.valorInput}%' `;
+            break;
+          case "IMPORTÂNCIA":
+            comandoSQL += ` tarefa.importancia LIKE '%${item.valorInput}%' `;
+            break;
+          case "DIFICULDADE":
+            comandoSQL += ` tarefa.dificuldade LIKE '%${item.valorInput}%' `;
+            break;
+          case "DATA INICIAL":
+            comandoSQL += ` tarefa.dataInicio LIKE '%${item.valorInput}%' `;
+            break;
+          case "DATA FINAL":
+            comandoSQL += ` tarefa.dataFim LIKE '%${item.valorInput}%' `;
+            break;
+        }
+
+        switch (item.valorLogico) {
+          case "E":
+            comandoSQL += ` AND `;
+            break;
+          case "OU":
+            comandoSQL += ` OR `;
+            break;
+          case "⦿":
+            break;
+        }
+
+        if (item.valorLogico === "⦿") {
+          break;
+        }
+      }
+    }
+
+    comandoSQL = comandoSQL.trim().replace(/(AND|OR)$/i, "");
+
+    comandoSQL += `
+    GROUP BY 
+      tarefa.id
+    ORDER BY 
+      tarefa.dataFim; `;
     await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
       const respostaTarefas = await db?.query(comandoSQL);
       definirTarefaFiltradas(respostaTarefas?.values);
       console.log(tarefaFiltradas);
     });
 
-    /*console.log(comandoSQL);*/
-  };
-
-  const adicionarCampoFiltro = () => {
-    defineLinhasFiltro([...linhasFiltro, linhasFiltro.length]);
-    console.log(linhasFiltro);
+    console.log(itensFiltro);
   };
 
   const carregaTarefas = async () => {
@@ -217,27 +240,29 @@ const PainelDeTarefas: React.FC = () => {
 
   const completarTarefa = async (id: number) => {
     try {
-      const sqlXPZerado = ` SELECT * FROM ATRIBUTO WHERE XP < 0 `
-      const sqlXPZerado1 = ` SELECT * FROM USUARIO WHERE XP < 0 `
+      const sqlXPZerado = ` SELECT * FROM ATRIBUTO WHERE XP < 0 `;
+      const sqlXPZerado1 = ` SELECT * FROM USUARIO WHERE XP < 0 `;
       await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
-        const resultado = await db?.query(sqlXPZerado)
-        const resultado1 = await db?.query(sqlXPZerado1)
+        const resultado = await db?.query(sqlXPZerado);
+        const resultado1 = await db?.query(sqlXPZerado1);
 
         if (resultado && resultado.values && resultado.values.length > 0) {
           const comandoSQL = ` UPDATE ATRIBUTO SET XP = 0 WHERE ID = ? `;
           for (const res of resultado.values) {
-            await db?.query(comandoSQL, [res.id])
+            await db?.query(comandoSQL, [res.id]);
           }
         }
 
         if (resultado1 && resultado1.values && resultado1.values.length > 0) {
           const comandoSQL1 = ` UPDATE USUARIO SET XP = 0 WHERE ID = ? `;
           for (const res of resultado1.values) {
-            await db?.query(comandoSQL1, [res.id])
+            await db?.query(comandoSQL1, [res.id]);
           }
         }
-      })
-    } catch (erro) { console.error(erro) }
+      });
+    } catch (erro) {
+      console.error(erro);
+    }
 
     let incremento = 0;
     const comandoSQLSelect = ` SELECT dificuldade, importancia
@@ -257,8 +282,8 @@ const PainelDeTarefas: React.FC = () => {
           const dificuldade = respostaSelect.values?.[0].dificuldade;
           const importancia = respostaSelect.values?.[0].importancia;
           incremento = (dificuldade + importancia) * 50;
-          console.log('INCREMENTO : ' + incremento)
-          console.log('ID : ' + id)
+          console.log("INCREMENTO : " + incremento);
+          console.log("ID : " + id);
 
           const comandoSQLUpdate = ` UPDATE Atributo
             SET xp = COALESCE(xp, 0) + ?
@@ -272,7 +297,7 @@ const PainelDeTarefas: React.FC = () => {
             SET xp = COALESCE(xp, 0) + ?  `;
 
           await db?.query(comandoSQLUpdate, [incremento, id]);
-          await db?.query(comandoSQLUpdate1, [incremento])
+          await db?.query(comandoSQLUpdate1, [incremento]);
           console.log(`XP atualizado em ${incremento} para tarefa_id ${id}`);
         } else {
           console.log("Nenhuma tarefa encontrada com o id fornecido");
@@ -304,8 +329,6 @@ const PainelDeTarefas: React.FC = () => {
           const dificuldade = respostaSelect.values?.[0].dificuldade;
           const importancia = respostaSelect.values?.[0].importancia;
           incremento = (dificuldade + importancia) * 50;
-          console.log('INCREMENTO : ' + incremento)
-          console.log('ID : ' + id)
 
           const comandoSQLUpdate = ` UPDATE Atributo
             SET xp = COALESCE(xp, 0) - ?
@@ -319,9 +342,8 @@ const PainelDeTarefas: React.FC = () => {
             SET xp = COALESCE(xp, 0) - ?  `;
 
           await db?.query(comandoSQLUpdate, [incremento, id]);
-          await db?.query(comandoSQLUpdate1, [incremento])
+          await db?.query(comandoSQLUpdate1, [incremento]);
           console.log(`XP atualizado em ${incremento} para tarefa_id ${id}`);
-
         } else {
           console.log("Nenhuma tarefa encontrada com o id fornecido");
         }
@@ -343,20 +365,23 @@ const PainelDeTarefas: React.FC = () => {
     const nomeMes = meses[mes - 1];
     return `${dia} de ${nomeMes}`;
 
-    return data
+    return data;
   };
 
   const separaImagens = (imagens: string) => {
     if (imagens) {
-      const imagensArray = imagens.split(',')
-      const filtraElementos = imagensArray.filter((imagem, index) => (index + 1) % 2 === 0);
+      const imagensArray = imagens.split(",");
+      const filtraElementos = imagensArray.filter(
+        (imagem, index) => (index + 1) % 2 === 0
+      );
 
-      return filtraElementos
-    } else return [null]
-  }
+      return filtraElementos;
+    } else return [null];
+  };
 
   const IniciarBanco = async () => {
-    const comandos = [`CREATE TABLE IF NOT EXISTS Usuario (
+    const comandos = [
+      `CREATE TABLE IF NOT EXISTS Usuario (
       id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
       nome TEXT(200),
       descricao TEXT(500),
@@ -401,24 +426,121 @@ const PainelDeTarefas: React.FC = () => {
       ativo INTEGER,
       FOREIGN KEY (atributo_id) REFERENCES Atributo(id),
       FOREIGN KEY (tarefa_id) REFERENCES Tarefa(id)
-    );`]
+    );`,
+    ];
     await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
       for (const comando of comandos) {
-        console.log(comando)
-        await db?.query(comando)
+        console.log(comando);
+        await db?.query(comando);
       }
-    })
-  }
+    });
+  };
 
   const carregaModal = (id: number) => {
-    defIdTarefaSel(id)
-    mostraModal(true)
-  }
+    defIdTarefaSel(id);
+    mostraModal(true);
+  };
 
   const fecharModais = () => {
-    mostraModal(false)
-    mostraModalDel(false)
-  }
+    mostraModal(false);
+    mostraModalDel(false);
+  };
+
+  const deletaCampoFiltro = () => {
+    const filtro = itensFiltro.find((item) => item.id === modalFiltroSel);
+
+    if (filtro && itensFiltro.length > 1) {
+      const filtrosAtt = itensFiltro.filter(
+        (item) => item.id !== modalFiltroSel
+      );
+
+      defItensFiltro(filtrosAtt);
+    }
+
+    defMostraModalLogico(false);
+  };
+
+  const executaModalFiltro = (modalId: number) => {
+    defModalFiltroSel(modalId);
+    defMostraModalFiltro(true);
+  };
+
+  const executaModalLogico = (modalId: number) => {
+    defModalFiltroSel(modalId);
+    defMostraModalLogico(true);
+  };
+
+  const modFiltroLabel = (label: string) => {
+    const filtro = itensFiltro.find((item) => item.id === modalFiltroSel);
+
+    if (filtro) {
+      const filtroAtt = { ...filtro, valorLabel: label };
+
+      const filtrosAtt = itensFiltro.map((item) =>
+        item.id === modalFiltroSel ? filtroAtt : item
+      );
+
+      defItensFiltro(filtrosAtt);
+    }
+
+    defMostraModalFiltro(false);
+  };
+
+  const modFiltroValorLogico = (label: string) => {
+    const filtro = itensFiltro.find((item) => item.id === modalFiltroSel);
+
+    if (filtro) {
+      const filtroAtt = { ...filtro, valorLogico: label };
+      const filtrosAtt = itensFiltro.map((item) =>
+        item.id === modalFiltroSel ? filtroAtt : item
+      );
+      defItensFiltro(filtrosAtt);
+    }
+
+    const maxId = Math.max(...itensFiltro.map((item) => item.id));
+
+    if ((label === "E" || label === "OU") && maxId === modalFiltroSel) {
+      const novoId = maxId + 1;
+      const novoCampo = {
+        id: novoId,
+        valorLabel: "SELECIONE",
+        valorInput: "",
+        valorLogico: "⦿",
+        imagem: "",
+      };
+      defItensFiltro((filtrosAntes) => [...filtrosAntes, novoCampo]);
+    }
+
+    defMostraModalLogico(false);
+  };
+
+  const modFiltroInput = (id: number, input: any) => {
+    const filtro = itensFiltro.find((item) => item.id === id);
+    if (filtro) {
+      const filtroAtt = { ...filtro, valorInput: input };
+      const filtrosAtt = itensFiltro.map((item) =>
+        item.id === id ? filtroAtt : item
+      );
+
+      defItensFiltro(filtrosAtt);
+    }
+  };
+
+  const addAtributoFiltro = (id: number, imagem: string) => {
+    const filtrosAtt = itensFiltro.map((item) => {
+      if (item.id === modalFiltroSel) {
+        return { ...item, valorInput: id, imagem };
+      }
+    });
+
+    defItensFiltro(filtrosAtt);
+    defMostraModalAtributo(false);
+  };
+
+  const abreModalAtt = (id: number) => {
+    defModalFiltroSel(id);
+    defMostraModalAtributo(true);
+  };
 
   return (
     <IonPage>
@@ -432,62 +554,124 @@ const PainelDeTarefas: React.FC = () => {
         />
       </IonHeader>
       <IonContent color="tertiary">
-        {/* <IonButton onClick={IniciarBanco}>Iniciar Banco</IonButton>*/}
-        
-        {/*mostraFiltro == true ? (
+        {mostraFiltro == true ? (
           <IonCard color="secondary">
-            <IonCardContent>
-              <IonGrid>
-                {linhasFiltro.map((linha, indice) => (
-                  <IonRow key={indice}>
-                    <IonCol size="5">
-                      <IonSelect
-                        id={`campo-filtro-${indice}`}
-                        label="Selecione"
-                        labelPlacement="floating"
-                      >
-                        <IonSelectOption>Atributo</IonSelectOption>
-                        <IonSelectOption>Nome</IonSelectOption>
-                        <IonSelectOption>Observação</IonSelectOption>
-                        <IonSelectOption>Importância</IonSelectOption>
-                        <IonSelectOption>Dificuldade</IonSelectOption>
-                        <IonSelectOption>Data Inicial</IonSelectOption>
-                        <IonSelectOption>Data Final</IonSelectOption>
-                      </IonSelect>
+            <IonCardContent style={{ padding: "0rem" }}>
+              <IonGrid style={{ padding: "0rem" }}>
+                {itensFiltro.map((objFiltro) => (
+                  <IonRow
+                    key={objFiltro.id}
+                    class="ion-align-items-center ion-justify-content-center"
+                    style={{ height: "100%" }}
+                  >
+                    <IonCol
+                      onClick={() => executaModalFiltro(objFiltro.id)}
+                      size="4"
+                      class="ion-text-center"
+                    >
+                      {" "}
+                      <IonButton color="primary" fill="clear">
+                        <IonLabel>{objFiltro.valorLabel}</IonLabel>
+                      </IonButton>
                     </IonCol>
-                    <IonCol size="5">
-                      <IonItem lines="none" color="secondary">
-                        <IonInput id={`valor-filtro-${indice}`}></IonInput>
-                      </IonItem>
+                    <IonCol size="6">
+                      {objFiltro.valorLabel === "SELECIONE" ? (
+                        <IonItem lines="none" color="secondary">
+                          <IonInput disabled class="desativado"></IonInput>
+                        </IonItem>
+                      ) : null}
+                      {objFiltro.valorLabel === "NOME" ||
+                      objFiltro.valorLabel === "OBSERVAÇÃO" ? (
+                        <IonItem lines="none" color="secondary">
+                          <IonInput
+                            onIonInput={(e) =>
+                              modFiltroInput(objFiltro.id, e.detail.value)
+                            }
+                            placeholder="Escreva aqui"
+                          ></IonInput>
+                        </IonItem>
+                      ) : null}
+                      {objFiltro.valorLabel === "IMPORTÂNCIA" ||
+                      objFiltro.valorLabel === "DIFICULDADE" ? (
+                        <IonItem lines="none" color="secondary">
+                          <IonInput
+                            onIonInput={(e) =>
+                              modFiltroInput(objFiltro.id, e.detail.value)
+                            }
+                            class="ion-text-center"
+                            type="number"
+                            placeholder="0"
+                          ></IonInput>
+                        </IonItem>
+                      ) : null}
+                      {objFiltro.valorLabel === "DATA INICIAL" ||
+                      objFiltro.valorLabel === "DATA FINAL" ? (
+                        <IonItem lines="none" color="secondary">
+                          <IonInput
+                            onIonInput={(e) =>
+                              modFiltroInput(objFiltro.id, e.detail.value)
+                            }
+                            type="date"
+                            color="dark"
+                          ></IonInput>
+                        </IonItem>
+                      ) : null}
+                      {objFiltro.valorLabel === "ATRIBUTOS" ? (
+                        <IonItem
+                          onClick={() => abreModalAtt(objFiltro.id)}
+                          lines="none"
+                          color="secondary"
+                        >
+                          <div
+                            className="ion-justify-content-center ion-align-items-center"
+                            style={{
+                              display: "flex",
+                              width: "100%",
+                              height: "100%",
+                            }}
+                          >
+                            <IonImg
+                              style={{
+                                width: "2.5rem",
+                                height: "2.5rem",
+                                borderRadius: "50%",
+                                objectFit: "cover",
+                                overflow: "hidden",
+                              }}
+                              src={objFiltro.imagem}
+                            ></IonImg>
+                          </div>
+
+                          {objFiltro == "" ? (
+                            <IonText>Adicionar att.</IonText>
+                          ) : null}
+                        </IonItem>
+                      ) : null}
                     </IonCol>
-                    <IonCol size="2">
-                      <IonSelect
-                        id={`operador-logico-${indice}`}
-                        label="OP"
-                        labelPlacement="floating"
-                      >
-                        <IonSelectOption>E</IonSelectOption>
-                        <IonSelectOption>OU</IonSelectOption>
-                      </IonSelect>
+                    <IonCol
+                      onClick={() => executaModalLogico(objFiltro.id)}
+                      size="2"
+                    >
+                      <IonButton fill="clear">
+                        {objFiltro.valorLogico}
+                      </IonButton>
                     </IonCol>
                   </IonRow>
                 ))}
-
-                <IonRow>
-                  <IonCol className="flex-center-icon-text">
-                    <IonButtons>
-                      <IonButton onClick={aplicaFiltro}>
-                        <IonIcon className="icon-large" icon={search}></IonIcon>
-                      </IonButton>
-                    </IonButtons>
-                  </IonCol>
+                <IonRow
+                  style={{ paddingBottom: "1rem" }}
+                  class="ion-align-items-center ion-justify-content-center"
+                >
+                  <IonButton fill="clear" onClick={aplicaFiltro}>
+                    <IonIcon className="icon-large" icon={search}></IonIcon>
+                  </IonButton>
                 </IonRow>
               </IonGrid>
             </IonCardContent>
           </IonCard>
-        ) : null*/}
+        ) : null}
 
-        {mostraFiltro == true ? (
+        {/*mostraFiltro == true ? (
           <IonCard color="secondary">
             <IonCardContent>
               <IonGrid>
@@ -544,13 +728,11 @@ const PainelDeTarefas: React.FC = () => {
               </IonGrid>
             </IonCardContent>
           </IonCard>
-        ) : null}
+        ) : null*/}
 
-        <IonCard key='total' color="secondary">
+        <IonCard key="total" color="secondary">
           <IonCardContent className="ion-text-center">
-            <IonText
-              style={{ fontSize: "1.5rem" }}
-            >
+            <IonText style={{ fontSize: "1.5rem" }}>
               Total: {quantidadeDeCards}
             </IonText>
           </IonCardContent>
@@ -561,31 +743,49 @@ const PainelDeTarefas: React.FC = () => {
             <CirculoCarregamento />
           ) : (
             tarefaFiltradas?.map((item, indice) => (
-              <>
-                <IonCard color="secondary" key={indice}>
-                  <IonGrid>
-                    <IonRow>
-                      <IonCol style={{ padding: "0px", display: "flex", justifyContent: "center", alignItems: "center" }} size="2">
-                        <IonButton
-                          fill="clear"
-                          color="primary"
-                          onClick={() => carregaModal(item.id)}
+              <IonCard color="secondary" key={indice}>
+                <IonGrid>
+                  <IonRow>
+                    <IonCol
+                      style={{
+                        padding: "0px",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                      size="2"
+                    >
+                      <IonButton
+                        fill="clear"
+                        color="primary"
+                        onClick={() => carregaModal(item.id)}
+                      >
+                        <IonIcon
+                          style={{ width: "1.5rem", height: "1.5rem" }}
+                          icon={grid}
+                        ></IonIcon>
+                      </IonButton>
+                    </IonCol>
+                    <IonCol style={{ paddingBottom: "0rem" }}>
+                      <IonCardHeader
+                        style={{
+                          padding: "0rem",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <IonCardTitle
+                          style={{ fontWeight: "bold" }}
+                          className="ion-text-center"
+                          color="light"
                         >
-                          <IonIcon style={{ width: "1.5rem", height: "1.5rem" }} icon={grid}></IonIcon>
-                        </IonButton>
-                      </IonCol>
-                      <IonCol style={{ paddingBottom: "0rem" }}>
-                        <IonCardHeader style={{ padding: "0rem", display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <IonCardTitle
-                            style={{ fontWeight: "bold" }}
-                            className="ion-text-center"
-                            color="light"
-                          >
-                            • {item.nome}
-                          </IonCardTitle>
-                          <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            {separaImagens(item.imagens).map((imagem, indice) => (
-                              imagem ? <IonImg
+                          • {item.nome}
+                        </IonCardTitle>
+                        <div style={{ display: "flex", gap: "0.5rem" }}>
+                          {separaImagens(item.imagens).map((imagem, indice) =>
+                            imagem ? (
+                              <IonImg
                                 style={{
                                   width: "2.5rem",
                                   height: "2.5rem",
@@ -595,52 +795,66 @@ const PainelDeTarefas: React.FC = () => {
                                 }}
                                 key={indice}
                                 src={`data:image/jpeg;base64,${imagem}`}
-                              /> : null
-                            ))}
-                          </div>
-                        </IonCardHeader>
-                      </IonCol>
-                      <IonCol style={{ padding: "0px", display: "flex", justifyContent: "center", alignItems: "center" }} size="2">
-                        <IonButton
-                          fill="clear"
-                          color="primary"
-                          onClick={() => completarTarefa(item.id)}
-                        >
-                          <IonIcon
-                            style={{
-                              backgroundColor: "white",
-                              borderRadius: "50%"
-                            }}
-                            size="large" icon={radioButtonOff}></IonIcon>
-                        </IonButton>
+                              />
+                            ) : null
+                          )}
+                        </div>
+                      </IonCardHeader>
+                    </IonCol>
+                    <IonCol
+                      style={{
+                        padding: "0px",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                      size="2"
+                    >
+                      <IonButton
+                        fill="clear"
+                        color="primary"
+                        onClick={() => completarTarefa(item.id)}
+                      >
+                        <IonIcon
+                          style={{
+                            backgroundColor: "white",
+                            borderRadius: "50%",
+                          }}
+                          size="large"
+                          icon={radioButtonOff}
+                        ></IonIcon>
+                      </IonButton>
+                    </IonCol>
+                  </IonRow>
+                  <IonCardContent style={{ padding: "0px" }}>
+                    <IonRow>
+                      <IonCol style={{ paddingBottom: "0rem" }}>
+                        <div className="ion-text-center">
+                          <IonLabel>{item.observacao}</IonLabel>
+                        </div>
                       </IonCol>
                     </IonRow>
-                    <IonCardContent style={{ padding: "0px" }}>
-                      <IonRow>
-                        <IonCol style={{ paddingBottom: "0rem" }}>
-                          <div className="ion-text-center">
-                            <IonLabel>{item.observacao}</IonLabel>
-                          </div>
-                        </IonCol>
-                      </IonRow>
-                      <IonRow>
-                        <IonCol></IonCol>
-                        <IonCol size="7" style={{ paddingBottom: "0rem" }}>
-                          <div className="ion-text-center">
-                            <IonIcon slot="start" icon={today}></IonIcon>
-                            <IonLabel
-                              style={{ fontSize: "1.2rem", marginLeft: "0.3rem" }}
-                            >
-                              {/*formatarData(item.dataInicio)*/} {formatarData(item.dataFim)}
-                            </IonLabel>
-                          </div>
-                        </IonCol>
-                        <IonCol></IonCol>
-                      </IonRow>
-                    </IonCardContent>
-                  </IonGrid>
-                </IonCard>
-              </>
+                    <IonRow>
+                      <IonCol></IonCol>
+                      <IonCol size="7" style={{ paddingBottom: "0rem" }}>
+                        <div className="ion-text-center">
+                          <IonIcon slot="start" icon={today}></IonIcon>
+                          <IonLabel
+                            style={{
+                              fontSize: "1.2rem",
+                              marginLeft: "0.3rem",
+                            }}
+                          >
+                            {/*formatarData(item.dataInicio)*/}{" "}
+                            {formatarData(item.dataFim)}
+                          </IonLabel>
+                        </div>
+                      </IonCol>
+                      <IonCol></IonCol>
+                    </IonRow>
+                  </IonCardContent>
+                </IonGrid>
+              </IonCard>
             ))
           )}
         </div>
@@ -654,15 +868,127 @@ const PainelDeTarefas: React.FC = () => {
         >
           +
         </IonButton>
-        {/*
-        <BotaoAdicionarItem caminho="./PaginaAdicionarTarefa" />*/}
+        {atributos ? (
+          <IonModal
+            isOpen={mostraModalAtributo}
+            onDidDismiss={() => defMostraModalAtributo(false)}
+            className="custom-modal"
+          >
+            {atributos.map((atributo: any) => (
+              <IonItem
+                onClick={() => addAtributoFiltro(atributo.id, atributo.imagem)}
+                key={atributo.id}
+                color="secondary"
+              >
+                <IonImg
+                  style={{
+                    width: "2.5rem",
+                    height: "2.5rem",
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                    overflow: "hidden",
+                  }}
+                  src={atributo.imagem}
+                >
+                  {atributo.imagem}
+                </IonImg>
+                <IonTitle>{atributo.nome}</IonTitle>
+              </IonItem>
+            ))}
+          </IonModal>
+        ) : null}
 
         <br></br>
+        <IonModal
+          isOpen={mostraModalFiltro}
+          onDidDismiss={() => defMostraModalFiltro(false)}
+          className="custom-modal"
+        >
+          <IonItem
+            onClick={() => modFiltroLabel("ATRIBUTOS")}
+            lines="none"
+            className="ion-text-center"
+          >
+            <IonTitle color="primary">➤ Atributos</IonTitle>
+          </IonItem>
+          <IonItem
+            onClick={() => modFiltroLabel("NOME")}
+            lines="none"
+            className="ion-text-center"
+          >
+            <IonTitle color="primary">➤ Nome</IonTitle>
+          </IonItem>
+          <IonItem
+            onClick={() => modFiltroLabel("OBSERVAÇÃO")}
+            lines="none"
+            className="ion-text-center"
+          >
+            <IonTitle color="primary">➤ Observação</IonTitle>
+          </IonItem>
+          <IonItem
+            onClick={() => modFiltroLabel("IMPORTÂNCIA")}
+            lines="none"
+            className="ion-text-center"
+          >
+            <IonTitle color="primary">➤ Importância</IonTitle>
+          </IonItem>
+          <IonItem
+            onClick={() => modFiltroLabel("DIFICULDADE")}
+            lines="none"
+            className="ion-text-center"
+          >
+            <IonTitle color="primary">➤ Dificuldade</IonTitle>
+          </IonItem>
+          <IonItem
+            onClick={() => modFiltroLabel("DATA INICIAL")}
+            lines="none"
+            className="ion-text-center"
+          >
+            <IonTitle color="primary">➤ Data Inicial</IonTitle>
+          </IonItem>
+          <IonItem
+            onClick={() => modFiltroLabel("DATA FINAL")}
+            lines="none"
+            className="ion-text-center"
+          >
+            <IonTitle color="primary">➤ Data Final</IonTitle>
+          </IonItem>
+        </IonModal>
+
+        <IonModal
+          isOpen={mostraModalLogico}
+          onDidDismiss={() => defMostraModalLogico(false)}
+          className="custom-modal"
+        >
+          <IonItem
+            onClick={deletaCampoFiltro}
+            lines="none"
+            className="ion-text-center"
+          >
+            <IonTitle color="primary"> ➤ ⦿ </IonTitle>
+          </IonItem>
+          <IonItem
+            onClick={() => modFiltroValorLogico("E")}
+            lines="none"
+            className="ion-text-center"
+          >
+            <IonTitle color="primary"> ➤ E</IonTitle>
+          </IonItem>
+          <IonItem
+            onClick={() => modFiltroValorLogico("OU")}
+            lines="none"
+            className="ion-text-center"
+          >
+            <IonTitle color="primary">➤ OU</IonTitle>
+          </IonItem>
+        </IonModal>
+
         <IonModal
           isOpen={modal}
           onDidDismiss={() => mostraModal(false)}
           className="custom-modal"
-        ><IonItem color="secondary">
+        >
+          <IonItem color="secondary">
             <IonButton
               fill="clear"
               color="danger"
@@ -715,20 +1041,16 @@ const PainelDeTarefas: React.FC = () => {
                 >
                   Confirmar
                 </IonButton>
-                <IonButton
-                  onClick={fecharModais}
-                  color="light"
-                >
+                <IonButton onClick={fecharModais} color="light">
                   Cancelar
                 </IonButton>
               </IonItem>
             </IonCardContent>
           </IonCard>
         </IonModal>
-
       </IonContent>
       <BarraInferior />
-    </IonPage >
+    </IonPage>
   );
 };
 

@@ -49,16 +49,19 @@ const PaginaTarefaEdicao: React.FC = () => {
   const [carregamento, definirCarregamento] = useState<boolean>(false);
   const [resultadoCadastro, definirResultadoCadastro] = useState<string>("");
   const [templateSelecionado, definirTemplateSelecionado] = useState<any>([]);
-  const [atributoSelecionado, definirAtributoSelecionado] = useState<Array<any>>([]);
+  const [atributoSelecionado, definirAtributoSelecionado] = useState<
+    Array<any>
+  >([]);
 
-  const [mostraModalAtributo, defMostraModalAtributo] = useState<boolean>(false)
+  const [mostraModalAtributo, defMostraModalAtributo] =
+    useState<boolean>(false);
 
   const [templates, definirTemplates] = useState<any>([]);
   const [atributos, definirAtributos] = useState<any>([]);
 
   const location = useLocation();
   const parametros = new URLSearchParams(location.search);
-  const id = parametros.get('id');
+  const id = parametros.get("id");
 
   const { executarAcaoSQL, iniciado } = usaSQLiteDB();
 
@@ -66,22 +69,20 @@ const PaginaTarefaEdicao: React.FC = () => {
 
   useEffect(() => {
     try {
-      definirCarregamento(true)
+      definirCarregamento(true);
       carregaTemplates();
       buscaAtributos();
       carregaEdicao();
     } catch (erro) {
-      console.error()
+      console.error();
     } finally {
-      definirCarregamento(false)
+      definirCarregamento(false);
     }
   }, [iniciado]);
 
   const carregaTemplates = async () => {
     await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
-      const resultado = await db?.query(
-        `SELECT * from template`,
-      );
+      const resultado = await db?.query(`SELECT * from template`);
       definirTemplates(resultado?.values);
     });
   };
@@ -99,27 +100,28 @@ const PaginaTarefaEdicao: React.FC = () => {
       tarefa.dataFim,
       GROUP_CONCAT(atributo.id) as ids
       FROM tarefa
-        JOIN
+        LEFT JOIN
             ListaAtributos ON tarefa.id = ListaAtributos.tarefa_id
-        JOIN
+        LEFT JOIN
             Atributo ON ListaAtributos.atributo_id = Atributo.id
-        WHERE tarefa.ID = ? `
+        WHERE tarefa.ID = ? `;
       await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
-        const resultado = await db?.query(comandoSQL, [id])
-        console.log(resultado)
+        const resultado = await db?.query(comandoSQL, [id]);
+        console.log(resultado);
         if (resultado && resultado.values && resultado.values.length > 0) {
-          const valores = resultado.values
-          definirNome(valores?.[0].nome)
-          definirObservacao(valores?.[0].observacao)
-          definirDataFinal(valores?.[0].dataFim)
-          definirDataInicial(valores?.[0].dataInicio)
-          definirImportancia(valores?.[0].importancia)
-          definirDificuldade(valores?.[0].dificuldade)
-          definirAtributoSelecionado((valores?.[0].ids).split(',').map(Number))
+          const valores = resultado.values;
+          definirNome(valores?.[0].nome);
+          definirObservacao(valores?.[0].observacao);
+          definirDataFinal(valores?.[0].dataFim);
+          definirDataInicial(valores?.[0].dataInicio);
+          definirImportancia(valores?.[0].importancia);
+          definirDificuldade(valores?.[0].dificuldade);
+
+          definirAtributoSelecionado((valores?.[0].ids).split(",").map(Number));
         }
-      })
+      });
     }
-  }
+  };
 
   const editarTarefa = async () => {
     const nomeInserido = String(nome);
@@ -163,21 +165,23 @@ const PaginaTarefaEdicao: React.FC = () => {
             dataFimInserida,
             0,
             1,
-            id
+            id,
           ]
         );
 
-        await db?.query(`DELETE FROM ListaAtributos WHERE tarefa_id = ?`, [id])
+        await db?.query(`DELETE FROM ListaAtributos WHERE tarefa_id = ?`, [id]);
 
         for (const atributoID of atributoSelecionado) {
-          await db?.query(`INSERT OR REPLACE INTO ListaAtributos 
+          await db?.query(
+            `INSERT OR REPLACE INTO ListaAtributos 
             (atributo_id, tarefa_id, ativo)
-            values (?, ?, ?)`, [atributoID, id, 1])
+            values (?, ?, ?)`,
+            [atributoID, id, 1]
+          );
         }
 
         definirResultadoCadastro("Tarefa editada com sucesso!");
       });
-
     } catch (erro) {
       console.log(erro);
       definirResultadoCadastro(
@@ -266,18 +270,22 @@ const PaginaTarefaEdicao: React.FC = () => {
   const addAtributoTarefa = (id: Number) => {
     try {
       if (atributoSelecionado.includes(id)) {
-        console.log('ID ENCONTRADO')
+        console.log("ID ENCONTRADO");
         definirAtributoSelecionado((atributosAnteriores) =>
-          atributosAnteriores.filter(att => att !== id))
+          atributosAnteriores.filter((att) => att !== id)
+        );
       } else {
-        definirAtributoSelecionado((atributosAnteriores) => [...atributosAnteriores, id]);
+        definirAtributoSelecionado((atributosAnteriores) => [
+          ...atributosAnteriores,
+          id,
+        ]);
       }
       console.log(id);
     } catch (erro) {
       console.error(erro);
     } finally {
       defMostraModalAtributo(false);
-      console.log(atributoSelecionado)
+      console.log(atributoSelecionado);
     }
   };
 
@@ -286,18 +294,10 @@ const PaginaTarefaEdicao: React.FC = () => {
       await db?.query(
         ` INSERT OR REPLACE INTO Tarefa (id, nome, observacao, importancia, dificuldade, dataInicio, dataFim)
            VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [
-          id,
-          nome,
-          observacao,
-          importancia,
-          dificuldade,
-          dataInicial,
-          dataFinal
-        ]
+        [id, nome, observacao, importancia, dificuldade, dataInicial, dataFinal]
       );
-    })
-  }
+    });
+  };
 
   return (
     <IonApp>
@@ -311,13 +311,27 @@ const PaginaTarefaEdicao: React.FC = () => {
               <CirculoCarregamento />
             ) : (
               <>
-                {(nome && observacao && importancia && dificuldade && dataFinal && dataInicial) || id ?
+                {(nome &&
+                  observacao &&
+                  importancia &&
+                  dificuldade &&
+                  dataFinal &&
+                  dataInicial) ||
+                id ? (
                   <IonGrid className="ion-text-center ion-margin">
-                    {atributos ?
-                      <IonItem lines="none" color="primary" onClick={() => defMostraModalAtributo(true)}>
-                        <IonText style={{ marginRight: "1rem", fontWeight: "bold" }}>Atributos:</IonText>
+                    {atributos ? (
+                      <IonItem
+                        lines="none"
+                        color="primary"
+                        onClick={() => defMostraModalAtributo(true)}
+                      >
+                        <IonText
+                          style={{ marginRight: "1rem", fontWeight: "bold" }}
+                        >
+                          Atributos:
+                        </IonText>
                         <div style={{ alignItems: "center", display: "flex" }}>
-                          {atributoSelecionado.length > 0 ?
+                          {atributoSelecionado.length > 0 ? (
                             atributoSelecionado.map((atributo: any) => (
                               <IonImg
                                 key={atributo}
@@ -329,11 +343,19 @@ const PaginaTarefaEdicao: React.FC = () => {
                                   overflow: "hidden",
                                   marginRight: "0.5rem",
                                 }}
-                                src={atributos.find((att: { id: any; }) => att.id === atributo)?.imagem} />
+                                src={
+                                  atributos.find(
+                                    (att: { id: any }) => att.id === atributo
+                                  )?.imagem
+                                }
+                              />
                             ))
-                            : <IonText>Clique para adicionar.</IonText>}
+                          ) : (
+                            <IonText>Clique para adicionar.</IonText>
+                          )}
                         </div>
-                      </IonItem> : null}
+                      </IonItem>
+                    ) : null}
 
                     {/*atributos && atributoSelecionado ? (
                       <IonRow>
@@ -399,7 +421,10 @@ const PaginaTarefaEdicao: React.FC = () => {
                         </IonItem>
                         <IonItem color="secondary">
                           <IonRange
-                            style={{ paddingLeft: "1rem", paddingRight: "1rem" }}
+                            style={{
+                              paddingLeft: "1rem",
+                              paddingRight: "1rem",
+                            }}
                             min={1}
                             max={5}
                             step={1}
@@ -418,7 +443,10 @@ const PaginaTarefaEdicao: React.FC = () => {
                         </IonItem>
                         <IonItem color="secondary">
                           <IonRange
-                            style={{ paddingLeft: "1rem", paddingRight: "1rem" }}
+                            style={{
+                              paddingLeft: "1rem",
+                              paddingRight: "1rem",
+                            }}
                             min={1}
                             max={5}
                             step={1}
@@ -469,20 +497,25 @@ const PaginaTarefaEdicao: React.FC = () => {
                       <IonLabel>Editar</IonLabel>
                     </IonButton>
                     <PopupResultado resultado={resultadoCadastro} />
-                  </IonGrid> : null}
+                  </IonGrid>
+                ) : null}
               </>
             )}
           </div>
         </IonCard>
 
-        {atributos ?
+        {atributos ? (
           <IonModal
             isOpen={mostraModalAtributo}
             onDidDismiss={() => defMostraModalAtributo(false)}
             className="custom-modal"
           >
             {atributos.map((atributo: any) => (
-              <IonItem key={atributo.id} color="secondary" onClick={() => addAtributoTarefa(atributo.id)} >
+              <IonItem
+                key={atributo.id}
+                color="secondary"
+                onClick={() => addAtributoTarefa(atributo.id)}
+              >
                 <IonImg
                   style={{
                     width: "2.5rem",
@@ -491,13 +524,15 @@ const PaginaTarefaEdicao: React.FC = () => {
                     objectFit: "cover",
                     overflow: "hidden",
                   }}
-                  src={atributo.imagem}>
+                  src={atributo.imagem}
+                >
                   {atributo.imagem}
                 </IonImg>
                 <IonTitle>{atributo.nome}</IonTitle>
               </IonItem>
             ))}
-          </IonModal> : null}
+          </IonModal>
+        ) : null}
       </IonContent>
     </IonApp>
   );
