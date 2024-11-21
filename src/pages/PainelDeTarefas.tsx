@@ -789,13 +789,14 @@ const PainelDeTarefas: React.FC = () => {
             justifyContent: "space-between",
             alignItems: "center",
             width: "95vw",
-            height: "95px",
+            height: "120px",
             overflow: "hidden",
           }}
           color="secondary"
         >
           <div
             style={{
+              marginTop: "25px",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
