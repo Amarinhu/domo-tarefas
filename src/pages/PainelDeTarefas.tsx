@@ -48,9 +48,10 @@ import {
 import { meses } from "../globalConstants/constantesGlobais";
 import BarraInferior from "../components/BarraInferiorControles";
 
-import HurtHeroi from '../animacoes/Hero/Hurt.png';
-import IdleHeroi from '../animacoes/Hero/Idle.png';
-import AttackHeroi from '../animacoes/Hero/Attack.png';
+import HurtHeroi from "../animacoes/Hero/Hurt.png";
+import IdleHeroi from "../animacoes/Hero/Idle.png";
+import AttackHeroi from "../animacoes/Hero/Attack.png";
+import BackGround from "../animacoes/background.gif";
 
 const PainelDeTarefas: React.FC = () => {
   const [estadoCarregamento, definirCarregamento] = useState(false);
@@ -360,15 +361,15 @@ const PainelDeTarefas: React.FC = () => {
       aplicaFiltro();
       fecharModais();
 
-      defAcaoMonstro('Attack.png');
+      defAcaoMonstro("Attack.png");
 
       const timeout = setTimeout(() => {
-        defAcaoHeroi(HurtHeroi); 
+        defAcaoHeroi(HurtHeroi);
       }, 1800);
 
       const timeout2 = setTimeout(() => {
-        defAcaoMonstro('Idle.png'); 
-        defAcaoHeroi(IdleHeroi); 
+        defAcaoMonstro("Idle.png");
+        defAcaoHeroi(IdleHeroi);
       }, 3600);
     }
   };
@@ -729,7 +730,7 @@ const PainelDeTarefas: React.FC = () => {
 
         <IonCard
           style={{
-            backgroundImage: `url("../src/animacoes/background.gif")`,
+            backgroundImage: `url("${BackGround}")`,
             backgroundSize: "cover",
             backgroundPosition: "center -95px",
             backgroundRepeat: "no-repeat",
