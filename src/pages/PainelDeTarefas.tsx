@@ -318,7 +318,7 @@ const PainelDeTarefas: React.FC = () => {
     const comandoCompleta = `UPDATE Tarefa SET completa = 1 WHERE id = ?`;
     try {
       await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
-        /* ARRUMA ISSO DPS await db?.query(comandoCompleta, [id]); */
+        await db?.query(comandoCompleta, [id]); 
         const respostaSelect = await db?.query(comandoSQLSelect, [id]);
 
         if (
@@ -365,7 +365,7 @@ const PainelDeTarefas: React.FC = () => {
     const comandoCompleta = `UPDATE Tarefa SET completa = 1 WHERE id = ?`;
     try {
       await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
-        await db?.query(comandoCompleta, [id]);
+        // await db?.query(comandoCompleta, [id]);
         const respostaSelect = await db?.query(comandoSQLSelect, [id]);
 
         if (
@@ -401,16 +401,16 @@ const PainelDeTarefas: React.FC = () => {
       aplicaFiltro();
       fecharModais();
 
-      defAcaoMonstro("Attack.png");
+      defAcaoMonstro(monstrosAttack[monstroId]);
 
-      const timeout = setTimeout(() => {
+      setTimeout(() => {
         defAcaoHeroi(HurtHeroi);
-      }, 1800);
+      }, 100);
 
       const timeout2 = setTimeout(() => {
-        defAcaoMonstro("Idle.png");
+        defAcaoMonstro(monstrosIdle[monstroId]);
         defAcaoHeroi(IdleHeroi);
-      }, 3600);
+      }, 1000);
     }
   };
 
@@ -627,6 +627,7 @@ const PainelDeTarefas: React.FC = () => {
   const monstrosIdle = [IdleMonstCogumelo, IdleMonstGoblin, IdleMonstEsqueleto];
   const monstrosHurt = [HurtMonstCogumelo, HurtMonstGoblin, HurtMonstEsqueleto];
   const monstrosDeath = [DeathMonstCogumelo, DeathMonstGoblin, DeathMonstEsqueleto];
+  const monstrosAttack = [AttackMonstCogumelo, AttackMonstGoblin, AttackMonstEsqueleto];
 
   const sorteiaMonstro = () => {
     const idmMnstroRandom = Math.floor(Math.random() * monstrosIdle.length);
@@ -836,7 +837,7 @@ const PainelDeTarefas: React.FC = () => {
                   width: "700px",
                   height: "175px",
                   top: "-40px",
-                  left: "-40px",
+                  left: "-30px",
                   transform: `scaleX(-1) translateX(${frameMonstro * 175}px)`,
                 }}
                 src={`${acaoMonstro}`}
