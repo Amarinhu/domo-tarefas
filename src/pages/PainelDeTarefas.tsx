@@ -48,6 +48,10 @@ import {
 import { meses } from "../globalConstants/constantesGlobais";
 import BarraInferior from "../components/BarraInferiorControles";
 
+import HurtHeroi from '../animacoes/Hero/Hurt.png';
+import IdleHeroi from '../animacoes/Hero/Idle.png';
+import AttackHeroi from '../animacoes/Hero/Attack.png';
+
 const PainelDeTarefas: React.FC = () => {
   const [estadoCarregamento, definirCarregamento] = useState(false);
   const [mostraFiltro, definirMostraFiltro] = useState<boolean>(false);
@@ -261,8 +265,7 @@ const PainelDeTarefas: React.FC = () => {
         }
       });
 
-      defAcaoHeroi("Attack.png");
-      defQtdFrameHeroi(6);
+      defAcaoHeroi(AttackHeroi);
     } catch (erro) {
       console.error(erro);
     }
@@ -360,12 +363,12 @@ const PainelDeTarefas: React.FC = () => {
       defAcaoMonstro('Attack.png');
 
       const timeout = setTimeout(() => {
-        defAcaoHeroi('Hurt.png'); 
+        defAcaoHeroi(HurtHeroi); 
       }, 1800);
 
       const timeout2 = setTimeout(() => {
         defAcaoMonstro('Idle.png'); 
-        defAcaoHeroi('Idle.png'); 
+        defAcaoHeroi(IdleHeroi); 
       }, 3600);
     }
   };
@@ -562,7 +565,7 @@ const PainelDeTarefas: React.FC = () => {
   const [frameMonstro, defFrameMonstro] = useState(0);
   const [monstroId, defMonstroId] = useState(0);
 
-  const [acaoHeroi, defAcaoHeroi] = useState("Idle.png");
+  const [acaoHeroi, defAcaoHeroi] = useState(IdleHeroi);
   const [acaoMonstro, defAcaoMonstro] = useState("Idle.png");
 
   useEffect(() => {
@@ -764,7 +767,7 @@ const PainelDeTarefas: React.FC = () => {
                   height: "80px",
                   transform: `translateX(-${frameHeroi * 80}px)`,
                 }}
-                src={`../src/animacoes/Hero/${acaoHeroi}`}
+                src={`${acaoHeroi}`}
               ></IonImg>
             </div>
 
