@@ -206,7 +206,7 @@ const PaginaTarefaCadastro: React.FC = () => {
       !dataFinalInserida ||
       !dataInicialInserida
     ) {
-      definirResultadoCadastro("Por favor, preencha todos os campos.");
+      definirResultadoCadastro("Campos obrigatórios em branco! [Nome, Observacao, Data Inicial, Data Final].");
       return;
     }
 
@@ -238,7 +238,9 @@ const PaginaTarefaCadastro: React.FC = () => {
       defCorToast("danger");
       defTextoToast(`Oops, alguma coisa deu errado.`);
     } finally {
-      recarregarPagina();
+      setTimeout(() => {
+        recarregarPagina();
+      }, 3000);
       definirCarregamento(false);
     }
   };

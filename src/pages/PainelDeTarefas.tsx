@@ -351,9 +351,23 @@ const PainelDeTarefas: React.FC = () => {
           respostaSelect.values?.length > 0
         ) {
           const dataFim = respostaSelect.values?.[0].dataFim;
-          /*if(dataFim == ){
+          const hoje = new Date();
+          const dataFormatada = hoje.toISOString().split("T")[0];
 
-          }*/
+          if (dataFim == dataFormatada) {
+            const comandoCompleta = `SELECT COUNT(id) as contagem from Tarefa WHERE dataFim = '${dataFormatada}'`;
+            const respostaSelectCount = await db?.query(comandoCompleta);
+            if (
+              Number(
+                respostaSelectCount &&
+                  respostaSelectCount.values &&
+                  respostaSelectCount?.values?.[0].contagem
+              ) == 0
+            ) {
+              defCorToast("success");
+              defTextoToast(`Você completou todas as tarefas de hoje!`);
+            }
+          }
 
           const dificuldade = respostaSelect.values?.[0].dificuldade;
           const importancia = respostaSelect.values?.[0].importancia;
