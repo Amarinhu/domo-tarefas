@@ -230,7 +230,8 @@ const PaginaTarefaCadastro: React.FC = () => {
           ]
         );
 
-        definirResultadoCadastro("Template cadastrada com sucesso!");
+        defCorToast("success");
+        defTextoToast(`Template salvo com sucesso.`);
       });
     } catch (erro) {
       console.log(erro);
@@ -268,6 +269,8 @@ const PaginaTarefaCadastro: React.FC = () => {
       defCorToast("danger");
       defTextoToast(`Oops, alguma coisa deu errado.`);
     } finally {
+      defCorToast("warning");
+      defTextoToast(`Template deletado com sucesso.`);
       carregaTemplates();
     }
   };
@@ -285,12 +288,6 @@ const PaginaTarefaCadastro: React.FC = () => {
       defCorToast("danger");
       defTextoToast(`Oops, alguma coisa deu errado.`);
     }
-  };
-
-  const capturaMudancaAtributo = (evento: CustomEvent) => {
-    const valor = (evento.target as HTMLIonSelectElement).value;
-    console.log(valor);
-    definirAtributoSelecionado(valor);
   };
 
   const capturaMudancaImportancia = (evento: CustomEvent) => {
@@ -354,22 +351,6 @@ const PaginaTarefaCadastro: React.FC = () => {
       definirDataFinal(templateSelecionado.dataFim ?? 1);
     }
   }, [templateSelecionado]);
-
-  const teste = () => {
-    console.log(`
-      Nome: ${nome}
-      Observação: ${observacao}
-      Importância: ${importancia}
-      Deficuldade: ${dificuldade}
-      Data Inicial: ${dataInicial}
-      Data Final: ${dataFinal}
-      Atributo: ${Array(atributoSelecionado)}
-      `)
-
-    for (const atributo of atributoSelecionado) {
-      console.log(atributo)
-    }
-  }
 
   return (
     <IonApp>

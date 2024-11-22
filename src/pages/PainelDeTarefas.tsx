@@ -270,21 +270,23 @@ const PainelDeTarefas: React.FC = () => {
 
     let tarefaNomeComando = `SELECT nome from Tarefa where id = ${id}`;
 
-    await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
-      try {
+    try {
+      await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
         await db?.query(tarefaDelecao);
         await db?.query(tarefaDelecao2);
-      } catch (erro) {
-        console.log(erro);
-      } finally {
+      });
+    } catch (erro) {
+      console.log(erro);
+    } finally {
+      await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
         const nomeTarefaQuery = await db?.query(tarefaNomeComando);
         const nomeTarefa = nomeTarefaQuery?.values?.[0].nome;
         defCorToast("success");
         defTextoToast(`Tarefa ${nomeTarefa} deletada.`);
-        aplicaFiltro();
-        fecharModais();
-      }
-    });
+      });
+      aplicaFiltro();
+      fecharModais();
+    }
   };
 
   const completarTarefa = async (id: number) => {
@@ -334,7 +336,7 @@ const PainelDeTarefas: React.FC = () => {
     }
 
     let incremento = 0;
-    const comandoSQLSelect = ` SELECT dificuldade, importancia
+    const comandoSQLSelect = ` SELECT dataFim, dificuldade, importancia
       FROM Tarefa
       WHERE id = ? `;
     const comandoCompleta = `UPDATE Tarefa SET completa = 1 WHERE id = ?`;
@@ -348,6 +350,11 @@ const PainelDeTarefas: React.FC = () => {
           respostaSelect.values &&
           respostaSelect.values?.length > 0
         ) {
+          const dataFim = respostaSelect.values?.[0].dataFim;
+          /*if(dataFim == ){
+
+          }*/
+
           const dificuldade = respostaSelect.values?.[0].dificuldade;
           const importancia = respostaSelect.values?.[0].importancia;
           incremento = (dificuldade + importancia) * 50;

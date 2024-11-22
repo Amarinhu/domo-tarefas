@@ -36,17 +36,6 @@ const PaginaBase: React.FC = () => {
   const [textoToast, defTextoToast] = useState<string>("");
   const [corToast, defCorToast] = useState<string>("warning");
 
-  useEffect(() => {
-    if (textoToast !== "") {
-      defMostraMensagem(true);
-
-      setTimeout(() => {
-        defMostraMensagem(false);
-        defTextoToast("");
-      }, 3000);
-    }
-  }, [textoToast]);
-
   const [atributoItens, defAtributoItens] = useState<Array<any>>([]);
 
   const { executarAcaoSQL, iniciado } = usaSQLiteDB();
@@ -71,6 +60,17 @@ const PaginaBase: React.FC = () => {
       defCarregamento(false);
     }
   };
+
+  useEffect(() => {
+    if (textoToast !== "") {
+      defMostraMensagem(true);
+
+      setTimeout(() => {
+        defMostraMensagem(false);
+        defTextoToast("");
+      }, 3000);
+    }
+  }, [textoToast]);
 
   const calculaNivel = (xp: number) => {
     let nivel = 0;
