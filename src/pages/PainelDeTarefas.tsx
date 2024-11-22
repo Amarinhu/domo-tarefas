@@ -23,6 +23,7 @@ import {
   IonSelectOption,
   IonText,
   IonTitle,
+  IonToast,
 } from "@ionic/react";
 import { useEffect, useState } from "react";
 import { SQLiteDBConnection } from "@capacitor-community/sqlite";
@@ -103,6 +104,21 @@ const PainelDeTarefas: React.FC = () => {
   ]);
 
   const { executarAcaoSQL, iniciado, iniciaTabelas } = usaSQLiteDB();
+
+  const [mostraMensagem, defMostraMensagem] = useState<boolean>(false);
+  const [textoToast, defTextoToast] = useState<string>("");
+  const [corToast, defCorToast] = useState<string>("warning");
+
+  useEffect(() => {
+    if (textoToast !== "") {
+      defMostraMensagem(true);
+
+      setTimeout(() => {
+        defMostraMensagem(false);
+        defTextoToast("");
+      }, 3000);
+    }
+  }, [textoToast]);
 
   const quantidadeDeCards = tarefaFiltradas?.length;
 
@@ -252,17 +268,23 @@ const PainelDeTarefas: React.FC = () => {
     let tarefaDelecao2 = `
       UPDATE ListaAtributos SET ativo = 0 WHERE tarefa_id = ${id};`;
 
-    try {
-      await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
+    let tarefaNomeComando = `SELECT nome from Tarefa where id = ${id}`;
+
+    await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
+      try {
         await db?.query(tarefaDelecao);
         await db?.query(tarefaDelecao2);
-      });
-    } catch (erro) {
-      console.log(erro);
-    } finally {
-      aplicaFiltro();
-      fecharModais();
-    }
+      } catch (erro) {
+        console.log(erro);
+      } finally {
+        const nomeTarefaQuery = await db?.query(tarefaNomeComando);
+        const nomeTarefa = nomeTarefaQuery?.values?.[0].nome;
+        defCorToast("success");
+        defTextoToast(`Tarefa ${nomeTarefa} deletada.`);
+        aplicaFiltro();
+        fecharModais();
+      }
+    });
   };
 
   const completarTarefa = async (id: number) => {
@@ -318,7 +340,7 @@ const PainelDeTarefas: React.FC = () => {
     const comandoCompleta = `UPDATE Tarefa SET completa = 1 WHERE id = ?`;
     try {
       await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
-        await db?.query(comandoCompleta, [id]); 
+        await db?.query(comandoCompleta, [id]);
         const respostaSelect = await db?.query(comandoSQLSelect, [id]);
 
         if (
@@ -626,8 +648,16 @@ const PainelDeTarefas: React.FC = () => {
 
   const monstrosIdle = [IdleMonstCogumelo, IdleMonstGoblin, IdleMonstEsqueleto];
   const monstrosHurt = [HurtMonstCogumelo, HurtMonstGoblin, HurtMonstEsqueleto];
-  const monstrosDeath = [DeathMonstCogumelo, DeathMonstGoblin, DeathMonstEsqueleto];
-  const monstrosAttack = [AttackMonstCogumelo, AttackMonstGoblin, AttackMonstEsqueleto];
+  const monstrosDeath = [
+    DeathMonstCogumelo,
+    DeathMonstGoblin,
+    DeathMonstEsqueleto,
+  ];
+  const monstrosAttack = [
+    AttackMonstCogumelo,
+    AttackMonstGoblin,
+    AttackMonstEsqueleto,
+  ];
 
   const sorteiaMonstro = () => {
     const idmMnstroRandom = Math.floor(Math.random() * monstrosIdle.length);
@@ -844,7 +874,9 @@ const PainelDeTarefas: React.FC = () => {
                 src={`${acaoMonstro}`}
               />
 
-              {estadoFumaca ? <IonImg style={{ zIndex : "100" }} src={Fumaca} /> : null}
+              {estadoFumaca ? (
+                <IonImg style={{ zIndex: "100" }} src={Fumaca} />
+              ) : null}
             </div>
           </div>
         </IonCard>
@@ -979,6 +1011,16 @@ const PainelDeTarefas: React.FC = () => {
         >
           +
         </IonButton>
+
+        <IonToast
+          color={corToast}
+          isOpen={mostraMensagem}
+          message={textoToast}
+          onDidDismiss={() => defMostraMensagem(false)}
+          duration={3000}
+        ></IonToast>
+        {estadoCarregamento ? <CirculoCarregamento /> : null}
+
         {atributos ? (
           <IonModal
             isOpen={mostraModalAtributo}

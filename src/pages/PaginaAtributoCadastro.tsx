@@ -42,6 +42,8 @@ const PaginaBase: React.FC = () => {
   const [carregamento, defCarregamento] = useState<boolean>(false);
   const [mostraMensagem, defMostraMensagem] = useState<boolean>(false);
   const [textoToast, defTextoToast] = useState<string>("");
+  const [corToast, defCorToast] = useState<string>("warning");
+
   const { executarAcaoSQL, iniciado } = usaSQLiteDB();
 
   const [nome, defNome] = useState<string>("");
@@ -59,7 +61,7 @@ const PaginaBase: React.FC = () => {
       setTimeout(() => {
         defMostraMensagem(false);
         defTextoToast("");
-      }, 5000);
+      }, 3000);
     }
   }, [textoToast]);
 
@@ -77,16 +79,28 @@ const PaginaBase: React.FC = () => {
   };
 
   const salvar = async () => {
-    try {
-      await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
-        const comandoSQL = `INSERT INTO ATRIBUTO (NOME, OBSERVACAO, IMAGEM, ATIVO) VALUES (?, ?, ?, ?)`;
-        await db?.query(comandoSQL, [nome, descricao, imagem, 1]);
-      });
-    } catch (erro) {
-      console.error(erro);
-    } finally {
-      defTextoToast("Atributo Cadastrado");
-      navegar.push("/PaginaAtributos");
+    if (nome != "") {
+      try {
+        let imgPadrao = imagem;
+        if (imagem == "") {
+          defImagem(atributoPlaceholder);
+          imgPadrao = atributoPlaceholder
+        }
+        await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
+          const comandoSQL = `INSERT INTO ATRIBUTO (NOME, OBSERVACAO, IMAGEM, ATIVO) VALUES (?, ?, ?, ?)`;
+          await db?.query(comandoSQL, [nome, descricao, imgPadrao, 1]);
+        });
+      } catch (erro) {
+        console.error(erro);
+        defCorToast("danger");
+        defTextoToast(`Oops, alguma coisa deu errado.`);
+      } finally {
+        defTextoToast("Atributo Cadastrado");
+        navegar.push("/PaginaAtributos");
+      }
+    } else {
+      defCorToast("danger");
+      defTextoToast("Campos obrigatórios em branco! [Nome]");
     }
   };
 
@@ -102,7 +116,8 @@ const PaginaBase: React.FC = () => {
       const base64Imagem = `data:image/${imagem.format};base64,${imagem.base64String}`;
       defImagem(base64Imagem);
     } catch (error) {
-      console.error("Erro em selecionaImagem:", error);
+      defCorToast("danger");
+      defTextoToast(`Oops, alguma coisa deu errado.`);
     }
   };
 
@@ -164,10 +179,11 @@ const PaginaBase: React.FC = () => {
           </IonCard>
         ) : null}
         <IonToast
+          color={corToast}
           isOpen={mostraMensagem}
           message={textoToast}
           onDidDismiss={() => defMostraMensagem(false)}
-          duration={5000}
+          duration={3000}
         ></IonToast>
         {carregamento ? <CirculoCarregamento /> : null}
       </IonContent>

@@ -31,9 +31,22 @@ import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
 
 const PaginaBase: React.FC = () => {
   const [carregamento, defCarregamento] = useState<boolean>(false);
+  const { executarAcaoSQL, iniciado } = usaSQLiteDB();
+
   const [mostraMensagem, defMostraMensagem] = useState<boolean>(false);
   const [textoToast, defTextoToast] = useState<string>("");
-  const { executarAcaoSQL, iniciado } = usaSQLiteDB();
+  const [corToast, defCorToast] = useState<string>("warning");
+
+  useEffect(() => {
+    if (textoToast !== "") {
+      defMostraMensagem(true);
+
+      setTimeout(() => {
+        defMostraMensagem(false);
+        defTextoToast("");
+      }, 3000);
+    }
+  }, [textoToast]);
 
   const [nome, defNome] = useState<string>("");
   const [imagem, defImagem] = useState<string>("");
@@ -77,7 +90,8 @@ const PaginaBase: React.FC = () => {
     } catch (erro) {
       console.error(erro);
     } finally {
-      defTextoToast("Alterações Salvas");
+      defCorToast("success")
+      defTextoToast("Alterações em Perfil salvas.");
     }
   };
 
@@ -236,10 +250,11 @@ const PaginaBase: React.FC = () => {
           </IonCard>
         ) : null}
         <IonToast
+          color={corToast}
           isOpen={mostraMensagem}
           message={textoToast}
           onDidDismiss={() => defMostraMensagem(false)}
-          duration={2000}
+          duration={3000}
         ></IonToast>
         {carregamento ? <CirculoCarregamento /> : null}
       </IonContent>

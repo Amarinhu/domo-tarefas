@@ -21,6 +21,7 @@ import {
   IonImg,
   IonText,
   IonCard,
+  IonToast,
 } from "@ionic/react";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -52,6 +53,21 @@ const PaginaTarefaCadastro: React.FC = () => {
   const [atributoSelecionado, definirAtributoSelecionado] = useState<Array<any>>([]);
   const [mostraModalAtributo, defMostraModalAtributo] = useState<boolean>(false)
 
+  const [mostraMensagem, defMostraMensagem] = useState<boolean>(false);
+  const [textoToast, defTextoToast] = useState<string>("");
+  const [corToast, defCorToast] = useState<string>("warning");
+
+  useEffect(() => {
+    if (textoToast !== "") {
+      defMostraMensagem(true);
+
+      setTimeout(() => {
+        defMostraMensagem(false);
+        defTextoToast("");
+      }, 3000);
+    }
+  }, [textoToast]);
+
   const [templates, definirTemplates] = useState<any>([]);
   const [atributos, definirAtributos] = useState<any>([]);
 
@@ -76,6 +92,8 @@ const PaginaTarefaCadastro: React.FC = () => {
       console.log(id);
     } catch (erro) {
       console.error(erro);
+      defCorToast("danger");
+      defTextoToast(`Oops, alguma coisa deu errado.`);
     } finally {
       defMostraModalAtributo(false);
       console.log(atributoSelecionado)
@@ -164,9 +182,8 @@ const PaginaTarefaCadastro: React.FC = () => {
       });
     } catch (erro) {
       console.log(erro);
-      definirResultadoCadastro(
-        "Erro ao cadastrar tarefa. Tente novamente mais tarde."
-      );
+      defCorToast("danger");
+      defTextoToast(`Oops, alguma coisa deu errado.`);
     } finally {
       definirCarregamento(false);
       navegar.replace("/PainelDeTarefas");
@@ -217,9 +234,8 @@ const PaginaTarefaCadastro: React.FC = () => {
       });
     } catch (erro) {
       console.log(erro);
-      definirResultadoCadastro(
-        "Erro ao cadastrar tarefa. Tente novamente mais tarde."
-      );
+      defCorToast("danger");
+      defTextoToast(`Oops, alguma coisa deu errado.`);
     } finally {
       recarregarPagina();
       definirCarregamento(false);
@@ -249,6 +265,8 @@ const PaginaTarefaCadastro: React.FC = () => {
       });
     } catch (erro) {
       console.log(erro);
+      defCorToast("danger");
+      defTextoToast(`Oops, alguma coisa deu errado.`);
     } finally {
       carregaTemplates();
     }
@@ -264,6 +282,8 @@ const PaginaTarefaCadastro: React.FC = () => {
       });
     } catch (erro) {
       console.log(erro);
+      defCorToast("danger");
+      defTextoToast(`Oops, alguma coisa deu errado.`);
     }
   };
 
@@ -359,9 +379,7 @@ const PaginaTarefaCadastro: React.FC = () => {
       <IonContent color="tertiary">
         {/*<IonButton onClick={teste}>TESTE</IonButton>*/}
         <div className="ion-padding">
-          {carregamento ? (
-            <CirculoCarregamento />
-          ) : (
+          {!carregamento ? (
             <>
               <IonCard color="primary">
                 <IonGrid className="ion-text-center ion-margin">
@@ -621,8 +639,17 @@ const PaginaTarefaCadastro: React.FC = () => {
                 </IonGrid>
               </IonCard>
             </>
-          )}
+          ) : null}
         </div>
+
+        <IonToast
+          color={corToast}
+          isOpen={mostraMensagem}
+          message={textoToast}
+          onDidDismiss={() => defMostraMensagem(false)}
+          duration={3000}
+        ></IonToast>
+        {carregamento ? <CirculoCarregamento /> : null}
 
         {atributos ?
           <IonModal

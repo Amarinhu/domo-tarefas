@@ -21,6 +21,7 @@ import {
   IonText,
   IonImg,
   IonCard,
+  IonToast,
 } from "@ionic/react";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -59,6 +60,21 @@ const PaginaTarefaEdicao: React.FC = () => {
   const [templates, definirTemplates] = useState<any>([]);
   const [atributos, definirAtributos] = useState<any>([]);
 
+  const [mostraMensagem, defMostraMensagem] = useState<boolean>(false);
+  const [textoToast, defTextoToast] = useState<string>("");
+  const [corToast, defCorToast] = useState<string>("warning");
+
+  useEffect(() => {
+    if (textoToast !== "") {
+      defMostraMensagem(true);
+
+      setTimeout(() => {
+        defMostraMensagem(false);
+        defTextoToast("");
+      }, 3000);
+    }
+  }, [textoToast]);
+
   const location = useLocation();
   const parametros = new URLSearchParams(location.search);
   const id = parametros.get("id");
@@ -75,6 +91,8 @@ const PaginaTarefaEdicao: React.FC = () => {
       carregaEdicao();
     } catch (erro) {
       console.error();
+      defCorToast("danger");
+      defTextoToast(`Oops, alguma coisa deu errado.`);
     } finally {
       definirCarregamento(false);
     }
@@ -139,7 +157,8 @@ const PaginaTarefaEdicao: React.FC = () => {
       !dataIniInserida ||
       !dataFimInserida
     ) {
-      definirResultadoCadastro("Por favor, preencha todos os campos.");
+      defCorToast("danger")
+      defTextoToast("Campos obrigatórios em branco! [Nome, Observação, Data Inicial e Data Final]");
       return;
     }
 
@@ -180,15 +199,17 @@ const PaginaTarefaEdicao: React.FC = () => {
           );
         }
 
-        definirResultadoCadastro("Tarefa editada com sucesso!");
+        const comandoNometarefa = await db?.query(`SELECT nome from Tarefa where id = ${id}`)
+        const nomeTarefa = comandoNometarefa?.values?.[0].nome
+        defCorToast("success")
+        defTextoToast(`Tarefa ${nomeTarefa} salva com sucesso.`);
       });
     } catch (erro) {
-      console.log(erro);
-      definirResultadoCadastro(
-        "Erro ao cadastrar tarefa. Tente novamente mais tarde."
-      );
+      console.error(erro);
+      defCorToast("danger");
+      defTextoToast(`Oops, alguma coisa deu errado.`);
     } finally {
-      navegar.replace("/PainelDeTarefas");
+      //navegar.replace("/PainelDeTarefas");
     }
   };
 
@@ -201,7 +222,9 @@ const PaginaTarefaEdicao: React.FC = () => {
         definirAtributos(resultado?.values);
       });
     } catch (erro) {
-      console.log(erro);
+      console.error(erro);
+      defCorToast("danger");
+      defTextoToast(`Oops, alguma coisa deu errado.`);
     }
   };
 
@@ -283,6 +306,8 @@ const PaginaTarefaEdicao: React.FC = () => {
       console.log(id);
     } catch (erro) {
       console.error(erro);
+      defCorToast("danger");
+      defTextoToast(`Oops, alguma coisa deu errado.`);
     } finally {
       defMostraModalAtributo(false);
       console.log(atributoSelecionado);
@@ -307,9 +332,7 @@ const PaginaTarefaEdicao: React.FC = () => {
       <IonContent color="tertiary">
         <IonCard color="primary">
           <div key="divG" className="ion-padding">
-            {carregamento ? (
-              <CirculoCarregamento />
-            ) : (
+            {!carregamento ? (
               <>
                 {(nome &&
                   observacao &&
@@ -500,9 +523,18 @@ const PaginaTarefaEdicao: React.FC = () => {
                   </IonGrid>
                 ) : null}
               </>
-            )}
+            ) : null}
           </div>
         </IonCard>
+
+        <IonToast
+          color={corToast}
+          isOpen={mostraMensagem}
+          message={textoToast}
+          onDidDismiss={() => defMostraMensagem(false)}
+          duration={3000}
+        ></IonToast>
+        {carregamento ? <CirculoCarregamento /> : null}
 
         {atributos ? (
           <IonModal

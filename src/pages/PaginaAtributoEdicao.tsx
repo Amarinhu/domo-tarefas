@@ -40,9 +40,22 @@ import { useLocation } from "react-router";
 
 const PaginaBase: React.FC = () => {
   const [carregamento, defCarregamento] = useState<boolean>(false);
+  const { executarAcaoSQL, iniciado } = usaSQLiteDB();
+
   const [mostraMensagem, defMostraMensagem] = useState<boolean>(false);
   const [textoToast, defTextoToast] = useState<string>("");
-  const { executarAcaoSQL, iniciado } = usaSQLiteDB();
+  const [corToast, defCorToast] = useState<string>("warning");
+
+  useEffect(() => {
+    if (textoToast !== "") {
+      defMostraMensagem(true);
+
+      setTimeout(() => {
+        defMostraMensagem(false);
+        defTextoToast("");
+      }, 3000);
+    }
+  }, [textoToast]);
 
   const [nome, defNome] = useState<string>("");
   const [imagem, defImagem] = useState<string>("");
@@ -83,16 +96,22 @@ const PaginaBase: React.FC = () => {
   }, [iniciado]);
 
   const salvar = async () => {
-    try {
-      await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
+    await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
+      try {
         const comandoSQL = `UPDATE ATRIBUTO SET NOME = ?, OBSERVACAO = ? WHERE ID = ?;`;
         await db?.query(comandoSQL, [nome, descricao, idEdicao]);
-      });
-    } catch (erro) {
-      console.error(erro);
-    } finally {
-      defTextoToast("Alterações Salvas");
-    }
+      } catch (erro) {
+        defCorToast("danger");
+        defTextoToast(`Oops, alguma coisa deu errado.`);
+      } finally {
+        const queryAttNome = await db?.query(
+          `SELECT nome from Atributo where id = ${idEdicao}`
+        );
+        const Attnome = queryAttNome?.values?.[0].nome;
+        defCorToast("success");
+        defTextoToast(`Atributo ${Attnome} salvo.`);
+      }
+    });
   };
 
   const calculaNivel = async (xp: number) => {
@@ -144,7 +163,8 @@ const PaginaBase: React.FC = () => {
         calculaNivel(xp);
       });
     } catch (erro) {
-      defTextoToast("Erro ocorreu: " + erro);
+      defCorToast("danger");
+      defTextoToast(`Oops, alguma coisa deu errado.`);
     } finally {
       defCarregamento(false);
     }
@@ -170,7 +190,8 @@ const PaginaBase: React.FC = () => {
         location.reload();
       });
     } catch (error) {
-      console.error("Erro em selecionaImagem:", error);
+      defCorToast("danger");
+      defTextoToast(`Oops, alguma coisa deu errado.`);
     }
   };
 
@@ -241,10 +262,11 @@ const PaginaBase: React.FC = () => {
           </IonCard>
         ) : null}
         <IonToast
+          color={corToast}
           isOpen={mostraMensagem}
           message={textoToast}
           onDidDismiss={() => defMostraMensagem(false)}
-          duration={5000}
+          duration={3000}
         ></IonToast>
         {carregamento ? <CirculoCarregamento /> : null}
       </IonContent>

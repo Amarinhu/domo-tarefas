@@ -32,6 +32,21 @@ import BarraInferior from "../components/BarraInferiorControles";
 const PaginaBase: React.FC = () => {
   const [carregamento, defCarregamento] = useState<boolean>(false);
 
+  const [mostraMensagem, defMostraMensagem] = useState<boolean>(false);
+  const [textoToast, defTextoToast] = useState<string>("");
+  const [corToast, defCorToast] = useState<string>("warning");
+
+  useEffect(() => {
+    if (textoToast !== "") {
+      defMostraMensagem(true);
+
+      setTimeout(() => {
+        defMostraMensagem(false);
+        defTextoToast("");
+      }, 3000);
+    }
+  }, [textoToast]);
+
   const [atributoItens, defAtributoItens] = useState<Array<any>>([]);
 
   const { executarAcaoSQL, iniciado } = usaSQLiteDB();
@@ -50,6 +65,8 @@ const PaginaBase: React.FC = () => {
       });
     } catch (erro) {
       console.error(erro);
+      defCorToast("danger");
+      defTextoToast(`Oops, alguma coisa deu errado.`);
     } finally {
       defCarregamento(false);
     }
@@ -84,18 +101,28 @@ const PaginaBase: React.FC = () => {
   };
 
   const confirmaDelecao = async (id: number) => {
-    let atributoDelecao = `
+    await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
+      let atributoDelecao = `
     UPDATE Atributo SET ativo = 0 WHERE id = ${id};`;
 
-    try {
-      await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
+      const attNomeCOmando = `SELECT nome from Atributo where id = ${id}; `;
+      try {
         await db?.query(atributoDelecao);
-      });
-    } catch (erro) {
-      console.log(erro);
-    } finally {
-      location.reload();
-    }
+      } catch (erro) {
+        console.error(erro);
+        defCorToast("danger");
+        defTextoToast(`Oops, alguma coisa deu errado.`);
+      } finally {
+        const atributoNomeQuery = await db?.query(attNomeCOmando);
+        const attNome = atributoNomeQuery?.values?.[0].nome;
+        defCorToast("warning");
+        defTextoToast(`Atributo ${attNome} deletado.`);
+
+        setTimeout(() => {
+          location.reload();
+        }, 2000);
+      }
+    });
   };
 
   useEffect(() => {
@@ -183,7 +210,7 @@ const PaginaBase: React.FC = () => {
                   </IonCardContent>
                 </IonCard>
                 <IonAlert
-                key ={`delecao-${atributo.id}`}
+                  key={`delecao-${atributo.id}`}
                   trigger={`delecao-alerta-${atributo.id}`}
                   header="Deletar Atributo?"
                   message="Tem certeza que deseja deletar essa atributo?"
@@ -210,6 +237,13 @@ const PaginaBase: React.FC = () => {
             </IonButton>
           </div>
         ) : null}
+        <IonToast
+          color={corToast}
+          isOpen={mostraMensagem}
+          message={textoToast}
+          onDidDismiss={() => defMostraMensagem(false)}
+          duration={3000}
+        ></IonToast>
         {carregamento ? <CirculoCarregamento /> : null}
       </IonContent>
 
