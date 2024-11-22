@@ -336,15 +336,13 @@ const PainelDeTarefas: React.FC = () => {
     }
 
     let incremento = 0;
-    const comandoSQLSelect = ` SELECT dataFim, dificuldade, importancia
+    const comandoSQLSelect = ` SELECT dataFim, nome, dificuldade, importancia
       FROM Tarefa
       WHERE id = ? `;
     const comandoCompleta = `UPDATE Tarefa SET completa = 1 WHERE id = ?`;
     try {
       await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
-        await db?.query(comandoCompleta, [id]);
         const respostaSelect = await db?.query(comandoSQLSelect, [id]);
-
         if (
           respostaSelect &&
           respostaSelect.values &&
@@ -354,21 +352,17 @@ const PainelDeTarefas: React.FC = () => {
           const hoje = new Date();
           const dataFormatada = hoje.toISOString().split("T")[0];
 
-          if (dataFim == dataFormatada) {
-            const comandoCompleta = `SELECT COUNT(id) as contagem from Tarefa WHERE dataFim = '${dataFormatada}'`;
+          if (dataFim.toString() == dataFormatada) {
+            const comandoCompleta = `SELECT COUNT(id) as contagem from Tarefa WHERE dataFim = '${dataFormatada}' and completa = 0 `;
             const respostaSelectCount = await db?.query(comandoCompleta);
-            if (
-              Number(
-                respostaSelectCount &&
-                  respostaSelectCount.values &&
-                  respostaSelectCount?.values?.[0].contagem
-              ) == 0
-            ) {
+
+            if (Number(respostaSelectCount?.values?.[0].contagem) == 1) {
               defCorToast("success");
               defTextoToast(`Você completou todas as tarefas de hoje!`);
             }
           }
 
+          await db?.query(comandoCompleta, [id]);
           const dificuldade = respostaSelect.values?.[0].dificuldade;
           const importancia = respostaSelect.values?.[0].importancia;
           incremento = (dificuldade + importancia) * 50;
@@ -388,6 +382,11 @@ const PainelDeTarefas: React.FC = () => {
 
           await db?.query(comandoSQLUpdate, [incremento, id]);
           await db?.query(comandoSQLUpdate1, [incremento]);
+          const nomeTarefa = respostaSelect.values?.[0].nome
+
+          defCorToast("success");
+          defTextoToast(`Você completou a tarefa '${nomeTarefa}' e recebeu ${incremento} de experiência.`);
+
           console.log(`XP atualizado em ${incremento} para tarefa_id ${id}`);
         } else {
           console.log("Nenhuma tarefa encontrada com o id fornecido");
@@ -731,7 +730,7 @@ const PainelDeTarefas: React.FC = () => {
                         </IonItem>
                       ) : null}
                       {objFiltro.valorLabel === "NOME" ||
-                      objFiltro.valorLabel === "OBSERVAÇÃO" ? (
+                        objFiltro.valorLabel === "OBSERVAÇÃO" ? (
                         <IonItem lines="none" color="secondary">
                           <IonInput
                             onIonInput={(e) =>
@@ -742,7 +741,7 @@ const PainelDeTarefas: React.FC = () => {
                         </IonItem>
                       ) : null}
                       {objFiltro.valorLabel === "IMPORTÂNCIA" ||
-                      objFiltro.valorLabel === "DIFICULDADE" ? (
+                        objFiltro.valorLabel === "DIFICULDADE" ? (
                         <IonItem lines="none" color="secondary">
                           <IonInput
                             onIonInput={(e) =>
@@ -755,7 +754,7 @@ const PainelDeTarefas: React.FC = () => {
                         </IonItem>
                       ) : null}
                       {objFiltro.valorLabel === "DATA INICIAL" ||
-                      objFiltro.valorLabel === "DATA FINAL" ? (
+                        objFiltro.valorLabel === "DATA FINAL" ? (
                         <IonItem lines="none" color="secondary">
                           <IonInput
                             onIonInput={(e) =>
