@@ -237,6 +237,7 @@ const PainelDeTarefas: React.FC = () => {
     ORDER BY 
       tarefa.dataFim; `;
     await executarAcaoSQL(async (db: SQLiteDBConnection | undefined) => {
+      console.log(comandoSQL)
       const respostaTarefas = await db?.query(comandoSQL);
       definirTarefaFiltradas(respostaTarefas?.values);
       console.log(tarefaFiltradas);
